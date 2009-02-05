@@ -2,8 +2,8 @@
 
 package com.googlecode.protobuf.socketrpc;
 
-public final class SocketRpc {
-  private SocketRpc() {}
+public final class SocketRpcProtos {
+  private SocketRpcProtos() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
   }
@@ -23,13 +23,13 @@ public final class SocketRpc {
     
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return com.googlecode.protobuf.socketrpc.SocketRpc.internal_static_protobuf_socketrpc_Request_descriptor;
+      return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Request_descriptor;
     }
     
     @Override
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.googlecode.protobuf.socketrpc.SocketRpc.internal_static_protobuf_socketrpc_Request_fieldAccessorTable;
+      return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Request_fieldAccessorTable;
     }
     
     // required string service_name = 1;
@@ -50,46 +50,46 @@ public final class SocketRpc {
     public boolean hasRequestProto() { return hasRequestProto; }
     public com.google.protobuf.ByteString getRequestProto() { return requestProto_; }
     
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(byte[] data)
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(java.io.InputStream input)
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Request parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws java.io.IOException {
@@ -99,25 +99,25 @@ public final class SocketRpc {
     
     public static Builder newBuilder() { return new Builder(); }
     public Builder newBuilderForType() { return new Builder(); }
-    public static Builder newBuilder(com.googlecode.protobuf.socketrpc.SocketRpc.Request prototype) {
+    public static Builder newBuilder(com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request prototype) {
       return new Builder().mergeFrom(prototype);
     }
     
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      // Construct using com.googlecode.protobuf.socketrpc.SocketRpc.Request.newBuilder()
+      // Construct using com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request.newBuilder()
       private Builder() {}
       
-      com.googlecode.protobuf.socketrpc.SocketRpc.Request result = new com.googlecode.protobuf.socketrpc.SocketRpc.Request();
+      com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request result = new com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request();
       
       @Override
-      protected com.googlecode.protobuf.socketrpc.SocketRpc.Request internalGetResult() {
+      protected com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request internalGetResult() {
         return result;
       }
       
       @Override
       public Builder clear() {
-        result = new com.googlecode.protobuf.socketrpc.SocketRpc.Request();
+        result = new com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request();
         return this;
       }
       
@@ -129,14 +129,14 @@ public final class SocketRpc {
       @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return com.googlecode.protobuf.socketrpc.SocketRpc.Request.getDescriptor();
+        return com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request.getDescriptor();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Request getDefaultInstanceForType() {
-        return com.googlecode.protobuf.socketrpc.SocketRpc.Request.getDefaultInstance();
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request getDefaultInstanceForType() {
+        return com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request.getDefaultInstance();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Request build() {
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request build() {
         if (!isInitialized()) {
           throw new com.google.protobuf.UninitializedMessageException(
             result);
@@ -144,7 +144,7 @@ public final class SocketRpc {
         return buildPartial();
       }
       
-      private com.googlecode.protobuf.socketrpc.SocketRpc.Request buildParsed()
+      private com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw new com.google.protobuf.UninitializedMessageException(
@@ -153,8 +153,8 @@ public final class SocketRpc {
         return buildPartial();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Request buildPartial() {
-        com.googlecode.protobuf.socketrpc.SocketRpc.Request returnMe = result;
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request buildPartial() {
+        com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request returnMe = result;
         result = null;
         return returnMe;
       }
@@ -216,7 +216,7 @@ public final class SocketRpc {
     }
     
     static {
-      com.googlecode.protobuf.socketrpc.SocketRpc.getDescriptor();
+      com.googlecode.protobuf.socketrpc.SocketRpcProtos.getDescriptor();
     }
   }
   
@@ -236,13 +236,13 @@ public final class SocketRpc {
     
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return com.googlecode.protobuf.socketrpc.SocketRpc.internal_static_protobuf_socketrpc_Response_descriptor;
+      return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Response_descriptor;
     }
     
     @Override
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return com.googlecode.protobuf.socketrpc.SocketRpc.internal_static_protobuf_socketrpc_Response_fieldAccessorTable;
+      return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Response_fieldAccessorTable;
     }
     
     // required bytes response_proto = 1;
@@ -251,46 +251,46 @@ public final class SocketRpc {
     public boolean hasResponseProto() { return hasResponseProto; }
     public com.google.protobuf.ByteString getResponseProto() { return responseProto_; }
     
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(byte[] data)
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return newBuilder().mergeFrom(data, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(java.io.InputStream input)
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input, extensionRegistry)
                .buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return newBuilder().mergeFrom(input).buildParsed();
     }
-    public static com.googlecode.protobuf.socketrpc.SocketRpc.Response parseFrom(
+    public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistry extensionRegistry)
         throws java.io.IOException {
@@ -300,25 +300,25 @@ public final class SocketRpc {
     
     public static Builder newBuilder() { return new Builder(); }
     public Builder newBuilderForType() { return new Builder(); }
-    public static Builder newBuilder(com.googlecode.protobuf.socketrpc.SocketRpc.Response prototype) {
+    public static Builder newBuilder(com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response prototype) {
       return new Builder().mergeFrom(prototype);
     }
     
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      // Construct using com.googlecode.protobuf.socketrpc.SocketRpc.Response.newBuilder()
+      // Construct using com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.newBuilder()
       private Builder() {}
       
-      com.googlecode.protobuf.socketrpc.SocketRpc.Response result = new com.googlecode.protobuf.socketrpc.SocketRpc.Response();
+      com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response result = new com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response();
       
       @Override
-      protected com.googlecode.protobuf.socketrpc.SocketRpc.Response internalGetResult() {
+      protected com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response internalGetResult() {
         return result;
       }
       
       @Override
       public Builder clear() {
-        result = new com.googlecode.protobuf.socketrpc.SocketRpc.Response();
+        result = new com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response();
         return this;
       }
       
@@ -330,14 +330,14 @@ public final class SocketRpc {
       @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return com.googlecode.protobuf.socketrpc.SocketRpc.Response.getDescriptor();
+        return com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.getDescriptor();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Response getDefaultInstanceForType() {
-        return com.googlecode.protobuf.socketrpc.SocketRpc.Response.getDefaultInstance();
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response getDefaultInstanceForType() {
+        return com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.getDefaultInstance();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Response build() {
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response build() {
         if (!isInitialized()) {
           throw new com.google.protobuf.UninitializedMessageException(
             result);
@@ -345,7 +345,7 @@ public final class SocketRpc {
         return buildPartial();
       }
       
-      private com.googlecode.protobuf.socketrpc.SocketRpc.Response buildParsed()
+      private com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response buildParsed()
           throws com.google.protobuf.InvalidProtocolBufferException {
         if (!isInitialized()) {
           throw new com.google.protobuf.UninitializedMessageException(
@@ -354,8 +354,8 @@ public final class SocketRpc {
         return buildPartial();
       }
       
-      public com.googlecode.protobuf.socketrpc.SocketRpc.Response buildPartial() {
-        com.googlecode.protobuf.socketrpc.SocketRpc.Response returnMe = result;
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response buildPartial() {
+        com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response returnMe = result;
         result = null;
         return returnMe;
       }
@@ -381,7 +381,7 @@ public final class SocketRpc {
     }
     
     static {
-      com.googlecode.protobuf.socketrpc.SocketRpc.getDescriptor();
+      com.googlecode.protobuf.socketrpc.SocketRpcProtos.getDescriptor();
     }
   }
   
@@ -404,12 +404,13 @@ public final class SocketRpc {
       descriptor;
   static {
     java.lang.String descriptorData =
-      "\n\033src/sdeo/test/rpc/rpc.proto\022\022protobuf." +
-      "socketrpc\"K\n\007Request\022\024\n\014service_name\030\001 \002" +
-      "(\t\022\023\n\013method_name\030\002 \002(\t\022\025\n\rrequest_proto" +
-      "\030\003 \002(\014\"\"\n\010Response\022\026\n\016response_proto\030\001 \002" +
-      "(\014B.\n!com.googlecode.protobuf.socketrpcB" +
-      "\tSocketRpc";
+      "\n4src/main/com/googlecode/protobuf/socke" +
+      "trpc/rpc.proto\022\022protobuf.socketrpc\"K\n\007Re" +
+      "quest\022\024\n\014service_name\030\001 \002(\t\022\023\n\013method_na" +
+      "me\030\002 \002(\t\022\025\n\rrequest_proto\030\003 \002(\014\"\"\n\010Respo" +
+      "nse\022\026\n\016response_proto\030\001 \002(\014B4\n!com.googl" +
+      "ecode.protobuf.socketrpcB\017SocketRpcProto" +
+      "s";
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
@@ -421,16 +422,16 @@ public final class SocketRpc {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_protobuf_socketrpc_Request_descriptor,
               new java.lang.String[] { "ServiceName", "MethodName", "RequestProto", },
-              com.googlecode.protobuf.socketrpc.SocketRpc.Request.class,
-              com.googlecode.protobuf.socketrpc.SocketRpc.Request.Builder.class);
+              com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request.class,
+              com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request.Builder.class);
           internal_static_protobuf_socketrpc_Response_descriptor =
             getDescriptor().getMessageTypes().get(1);
           internal_static_protobuf_socketrpc_Response_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_protobuf_socketrpc_Response_descriptor,
               new java.lang.String[] { "ResponseProto", },
-              com.googlecode.protobuf.socketrpc.SocketRpc.Response.class,
-              com.googlecode.protobuf.socketrpc.SocketRpc.Response.Builder.class);
+              com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.class,
+              com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder.class);
           return null;
         }
       };
