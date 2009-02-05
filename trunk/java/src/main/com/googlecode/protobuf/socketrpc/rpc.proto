@@ -1,0 +1,14 @@
+package protobuf.socketrpc;
+
+option java_package = "com.googlecode.protobuf.socketrpc";
+option java_outer_classname = "SocketRpc";
+
+message Request {
+  required string service_name = 1;
+  required string method_name = 2;
+  required bytes request_proto = 3;
+}
+
+message Response {
+  required bytes response_proto = 1;
+}
