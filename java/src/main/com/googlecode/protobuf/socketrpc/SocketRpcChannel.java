@@ -61,12 +61,20 @@ public class SocketRpcChannel implements RpcChannel {
       LOG.log(Level.WARNING, msg, e);
       socketController.success = false;
       socketController.error = msg;
+      if (socket != null) {
+        try {
+          socket.close();
+        } catch (IOException e1) {
+          // It's ok
+        }
+      }
       return;
     }
 
     // Do read/write
     try {
       request.writeTo(out);
+      out.flush();
       socket.shutdownOutput();
       Message output = responsePrototype.newBuilderForType().mergeFrom(in)
           .build();
