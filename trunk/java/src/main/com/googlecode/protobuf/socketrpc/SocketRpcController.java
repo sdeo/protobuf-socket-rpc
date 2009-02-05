@@ -15,7 +15,7 @@ public class SocketRpcController implements RpcController {
 
   @Override
   public boolean failed() {
-    return success;
+    return !success;
   }
   
   @Override
