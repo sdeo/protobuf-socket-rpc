@@ -69,7 +69,7 @@ public class SocketRpcServer {
   /**
    * Handles socket requests.
    */
-  private static class Handler implements Runnable {
+  private class Handler implements Runnable {
 
     private final Socket socket;
 
@@ -110,29 +110,36 @@ public class SocketRpcServer {
         if (out != null) {
           out.close();
         }
+        socket.close();
       } catch (IOException e) {
         // It's ok
         LOG.log(Level.WARNING, "Error while closing I/O", e);
-      } finally {
-        try {
-          socket.close();
-        } catch (IOException e) {
-          // It's ok
-          LOG.log(Level.WARNING, "Error while closing socket", e);
-        }
       }
     }
 
     private void callMethod(InputStream in,
         final OutputStream out) throws IOException {
       // Get the service/method
-      // TODO This should come from the request
-      Service service = new AddressBookImpl();
-      MethodDescriptor method = AddressBook.getDescriptor().getMethods().get(0);
+      SocketRpcProtos.Request rpcRequest = SocketRpcProtos.Request.newBuilder()
+          .mergeFrom(in).build();
+      Service service = serviceMap.get(rpcRequest.getServiceName());
+      if (service == null) {
+        // TODO Send back error
+        LOG.warning("Could not find service: " + rpcRequest.getServiceName());
+        return;
+      }
+      MethodDescriptor method = service.getDescriptorForType()
+          .findMethodByName(rpcRequest.getMethodName());
+      if (method == null) {
+        // TODO Send back error
+        LOG.warning("Could not find method: " + rpcRequest.getMethodName());
+        return;
+      }
       
       // Call method, read/write request/response
+      // TODO Return error if bad type
       Message request = service.getRequestPrototype(method).newBuilderForType()
-          .mergeFrom(in).build();
+          .mergeFrom(rpcRequest.getRequestProto()).build();
       SocketRpcController socketController = new SocketRpcController();
       Callback callback = new Callback();
       service.callMethod(method, socketController, request, callback);
@@ -143,7 +150,7 @@ public class SocketRpcServer {
     /**
      * Callback that just saves the response.
      */
-    private static class Callback implements RpcCallback<Message> {
+    private class Callback implements RpcCallback<Message> {
 
       private Message response;
       

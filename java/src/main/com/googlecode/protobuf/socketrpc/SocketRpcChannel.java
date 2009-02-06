@@ -34,6 +34,9 @@ public class SocketRpcChannel implements RpcChannel {
     this.port = port;
   }
 
+  /**
+   * Create new rpc controller to be used to control one request.
+   */
   public SocketRpcController newRpcController() {
     return new SocketRpcController();
   }
@@ -64,22 +67,32 @@ public class SocketRpcChannel implements RpcChannel {
       if (socket != null) {
         try {
           socket.close();
-        } catch (IOException e1) {
+        } catch (IOException ioe) {
           // It's ok
         }
       }
       return;
     }
+    
+    // Create RPC request protobuf
+    SocketRpcProtos.Request rpcRequest = SocketRpcProtos.Request.newBuilder()
+        .setRequestProto(request.toByteString())
+        .setServiceName(method.getService().getFullName())
+        .setMethodName(method.getName())
+        .build();
 
     // Do read/write
     try {
-      request.writeTo(out);
+      rpcRequest.writeTo(out);
       out.flush();
       socket.shutdownOutput();
-      Message output = responsePrototype.newBuilderForType().mergeFrom(in)
-          .build();
-      done.run(output);
+      SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
+          .newBuilder().mergeFrom(in).build();
+      // TODO Return error if bad type
+      Message response = responsePrototype.newBuilderForType().mergeFrom(
+          rpcResponse.toByteString()).build();
       socketController.success = true;
+      done.run(response);
     } catch (IOException e) {
       String msg = String.format("Error reading/writing for %s:%s, %s", host,
           port);
