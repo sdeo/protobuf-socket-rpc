@@ -16,13 +16,18 @@ import java.util.logging.Logger;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcChannel;
 import com.google.protobuf.Service;
 import com.google.protobuf.UninitializedMessageException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder;
 
 /**
- * Socket server for running rpc services.
+ * Socket server for running rpc services. It can serve requests for any
+ * registered service from any client who is using {@link RpcChannel}.
+ * <p>
+ * Note that this server can only handle synchronous requests, so the client is
+ * blocked until the callback is called by the service implementation.
  * 
  * @author Shardul Deo
  */
@@ -200,7 +205,6 @@ public class SocketRpcServer {
       private Message response;
       private boolean invoked = false;
       
-      @Override
       public void run(Message response) {
         this.response = response;
         invoked = true;

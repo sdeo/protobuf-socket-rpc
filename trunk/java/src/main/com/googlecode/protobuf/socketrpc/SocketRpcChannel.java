@@ -19,9 +19,9 @@ import com.google.protobuf.UninitializedMessageException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 
 /**
- * Socket implementation of {@link RpcChannel}. Makes the rpc to a server
- * running {@link SocketRpcServer} with the rpc method implementation running on
- * it.
+ * Socket implementation of {@link RpcChannel}. Makes a synchronous rpc call to
+ * a server running {@link SocketRpcServer} with the rpc method implementation
+ * running on it.
  * <p>
  * If an {@link RpcCallback} is given, the
  * {@link #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)}
@@ -54,7 +54,6 @@ public class SocketRpcChannel implements RpcChannel {
     return new SocketRpcController();
   }
 
-  @Override
   public void callMethod(MethodDescriptor method, RpcController controller,
       Message request, Message responsePrototype, RpcCallback<Message> done) {
     // Must pass in a SocketRpcController
