@@ -1,3 +1,7 @@
+// Author: Shardul Deo
+//
+// Protobufs needed for socket rpcs.
+
 package protobuf.socketrpc;
 
 option java_package = "com.googlecode.protobuf.socketrpc";
@@ -10,5 +14,6 @@ message Request {
 }
 
 message Response {
-  required bytes response_proto = 1;
+  optional bytes response_proto = 1;
+  optional string error = 2;
 }
