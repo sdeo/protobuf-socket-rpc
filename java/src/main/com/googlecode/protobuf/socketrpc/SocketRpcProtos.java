@@ -245,11 +245,17 @@ public final class SocketRpcProtos {
       return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Response_fieldAccessorTable;
     }
     
-    // required bytes response_proto = 1;
+    // optional bytes response_proto = 1;
     private boolean hasResponseProto;
     private com.google.protobuf.ByteString responseProto_ = com.google.protobuf.ByteString.EMPTY;
     public boolean hasResponseProto() { return hasResponseProto; }
     public com.google.protobuf.ByteString getResponseProto() { return responseProto_; }
+    
+    // optional string error = 2;
+    private boolean hasError;
+    private java.lang.String error_ = "";
+    public boolean hasError() { return hasError; }
+    public java.lang.String getError() { return error_; }
     
     public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.ByteString data)
@@ -361,7 +367,7 @@ public final class SocketRpcProtos {
       }
       
       
-      // required bytes response_proto = 1;
+      // optional bytes response_proto = 1;
       public boolean hasResponseProto() {
         return result.hasResponseProto();
       }
@@ -376,6 +382,24 @@ public final class SocketRpcProtos {
       public Builder clearResponseProto() {
         result.hasResponseProto = false;
         result.responseProto_ = com.google.protobuf.ByteString.EMPTY;
+        return this;
+      }
+      
+      // optional string error = 2;
+      public boolean hasError() {
+        return result.hasError();
+      }
+      public java.lang.String getError() {
+        return result.getError();
+      }
+      public Builder setError(java.lang.String value) {
+        result.hasError = true;
+        result.error_ = value;
+        return this;
+      }
+      public Builder clearError() {
+        result.hasError = false;
+        result.error_ = "";
         return this;
       }
     }
@@ -407,10 +431,10 @@ public final class SocketRpcProtos {
       "\n4src/main/com/googlecode/protobuf/socke" +
       "trpc/rpc.proto\022\022protobuf.socketrpc\"K\n\007Re" +
       "quest\022\024\n\014service_name\030\001 \002(\t\022\023\n\013method_na" +
-      "me\030\002 \002(\t\022\025\n\rrequest_proto\030\003 \002(\014\"\"\n\010Respo" +
-      "nse\022\026\n\016response_proto\030\001 \002(\014B4\n!com.googl" +
-      "ecode.protobuf.socketrpcB\017SocketRpcProto" +
-      "s";
+      "me\030\002 \002(\t\022\025\n\rrequest_proto\030\003 \002(\014\"1\n\010Respo" +
+      "nse\022\026\n\016response_proto\030\001 \001(\014\022\r\n\005error\030\002 \001" +
+      "(\tB4\n!com.googlecode.protobuf.socketrpcB" +
+      "\017SocketRpcProtos";
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
@@ -429,7 +453,7 @@ public final class SocketRpcProtos {
           internal_static_protobuf_socketrpc_Response_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_protobuf_socketrpc_Response_descriptor,
-              new java.lang.String[] { "ResponseProto", },
+              new java.lang.String[] { "ResponseProto", "Error", },
               com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.class,
               com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder.class);
           return null;

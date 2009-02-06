@@ -13,13 +13,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import sdeo.test.rpc.AddressBookImpl;
-import sdeo.test.rpc.AddressBookProtos.AddressBook;
-
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.Service;
+import com.google.protobuf.UninitializedMessageException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder;
 
 /**
  * Socket server for running rpc services.
@@ -35,11 +35,18 @@ public class SocketRpcServer {
   private final ExecutorService executor;
   private final int port;
 
+  /**
+   * @param port Port that this server will be started on.
+   * @param executorService To be used for handling requests.
+   */
   public SocketRpcServer(int port, ExecutorService executorService) {
     this.port = port;
     this.executor = executorService;
   }
 
+  /**
+   * Register an rpc service implementation on this server.
+   */
   public void registryService(Service service) {
     serviceMap.put(service.getDescriptorForType().getFullName(), service);
   }
@@ -92,7 +99,9 @@ public class SocketRpcServer {
 
       // Call method
       try {
-        callMethod(in, out);
+        SocketRpcProtos.Response rpcResponse = callMethod(in);
+        rpcResponse.writeTo(out);
+        out.flush();
         socket.shutdownOutput();
       } catch (IOException e) {
         LOG.log(Level.WARNING, "Error while reading/writing", e);
@@ -117,46 +126,84 @@ public class SocketRpcServer {
       }
     }
 
-    private void callMethod(InputStream in,
-        final OutputStream out) throws IOException {
+    private SocketRpcProtos.Response callMethod(InputStream in)
+        throws IOException {
+      // Parse request
+      SocketRpcProtos.Request rpcRequest;
+      try {
+        rpcRequest = SocketRpcProtos.Request.newBuilder().mergeFrom(in).build();
+      } catch (UninitializedMessageException e) {
+        return handleError("Bad request from client", e);
+      }
+      
       // Get the service/method
-      SocketRpcProtos.Request rpcRequest = SocketRpcProtos.Request.newBuilder()
-          .mergeFrom(in).build();
       Service service = serviceMap.get(rpcRequest.getServiceName());
       if (service == null) {
-        // TODO Send back error
-        LOG.warning("Could not find service: " + rpcRequest.getServiceName());
-        return;
+        return handleError("Could not find service: "
+            + rpcRequest.getServiceName(), null);
       }
       MethodDescriptor method = service.getDescriptorForType()
           .findMethodByName(rpcRequest.getMethodName());
       if (method == null) {
-        // TODO Send back error
-        LOG.warning("Could not find method: " + rpcRequest.getMethodName());
-        return;
+        return handleError(String.format(
+            "Could not find method %s in service %s", 
+            rpcRequest.getMethodName(), 
+            service.getDescriptorForType().getFullName()), null);
       }
       
-      // Call method, read/write request/response
-      // TODO Return error if bad type
-      Message request = service.getRequestPrototype(method).newBuilderForType()
-          .mergeFrom(rpcRequest.getRequestProto()).build();
+      // Parse request
+      Message request;
+      try {
+        request = service.getRequestPrototype(method).newBuilderForType()
+            .mergeFrom(rpcRequest.getRequestProto()).build();
+      } catch (UninitializedMessageException e) {
+        return handleError("Invalid request proto", e);
+      }
+      
+      // Call method
       SocketRpcController socketController = new SocketRpcController();
       Callback callback = new Callback();
-      service.callMethod(method, socketController, request, callback);
-      callback.response.writeTo(out);
-      out.flush();
+      try {
+        service.callMethod(method, socketController, request, callback);
+      } catch (RuntimeException e) {
+        return handleError("Error running method " + method.getFullName()
+            + rpcRequest.getMethodName(), e);
+      }
+      
+      // Build and return response (callback is optional)
+      Builder responseBuilder = SocketRpcProtos.Response.newBuilder();
+      if (callback.response != null) {
+        responseBuilder.setResponseProto(callback.response.toByteString());
+      } else if (callback.invoked) {
+        // Callback with null
+        responseBuilder.setResponseProto(ByteString.EMPTY);
+      }
+      if (socketController.error != null) {
+        responseBuilder.setError(socketController.error);
+      }
+      return responseBuilder.build();
     }
     
+    private SocketRpcProtos.Response handleError(String msg, Exception e) {
+      LOG.log(Level.WARNING, msg, e);
+      return SocketRpcProtos.Response
+          .newBuilder()
+          .setError(msg)
+          .build();
+    }
+
     /**
-     * Callback that just saves the response.
+     * Callback that just saves the response and the fact that it was invoked.
      */
     private class Callback implements RpcCallback<Message> {
 
       private Message response;
+      private boolean invoked = false;
       
       @Override
       public void run(Message response) {
         this.response = response;
+        invoked = true;
       }
     }
   }
