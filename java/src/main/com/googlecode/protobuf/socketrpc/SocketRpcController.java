@@ -5,13 +5,30 @@ import com.google.protobuf.RpcController;
 
 /**
  * Simple controller.
- * 
+ *
  * @author Shardul Deo
  */
 public class SocketRpcController implements RpcController {
-  
+
+  /**
+   * Error reason, to be used client side
+   */
+  public enum ErrorReason {
+    /** Rpc was called with bad request proto */
+    BadRequestProto,
+    /** Rpc returned a bad response proto */
+    BadResponseProto,
+    /** Could not find supplied host */
+    UnknownHost,
+    /** I/O error while communicating with server */
+    IOError,
+    /** Server returned an error while running the rpc */
+    ServerError,
+  }
+
   boolean success = false;
   String error = null;
+  ErrorReason reason = null;
 
   public void reset() {
     success = false;
@@ -20,6 +37,13 @@ public class SocketRpcController implements RpcController {
 
   public boolean failed() {
     return !success;
+  }
+
+  /**
+   * @return Reason for rpc error, to be used client side
+   */
+  public ErrorReason errorReason() {
+    return reason;
   }
 
   public String errorText() {

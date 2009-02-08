@@ -1,0 +1,20 @@
+// Author: Shardul Deo
+//
+// Protobufs used for unit tests.
+
+package protobuf.socketrpc;
+
+option java_package = "com.googlecode.protobuf.socketrpc";
+option java_outer_classname = "TestProtos";
+
+message Request {
+  required string str_data = 1;
+}
+
+message Response {
+  required string str_data = 1;
+}
+
+service TestService {
+  rpc TestMethod(Request) returns(Response);
+}
