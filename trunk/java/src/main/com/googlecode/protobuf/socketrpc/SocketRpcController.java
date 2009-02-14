@@ -14,6 +14,7 @@ public class SocketRpcController implements RpcController {
    * Error reason, to be used client side
    */
   public enum ErrorReason {
+    // Client-side errors
     /** Rpc was called with bad request proto */
     BadRequestProto,
     /** Rpc returned a bad response proto */
@@ -22,8 +23,22 @@ public class SocketRpcController implements RpcController {
     UnknownHost,
     /** I/O error while communicating with server */
     IOError,
-    /** Server returned an error while running the rpc */
-    ServerError,
+
+    // Server-side errors
+    /** Server received bad request data */
+    ServerBadRequestData,
+    /** Server received bad request proto */
+    ServerBadRequestProto,
+    /** Service not found on server */
+    ServerServiceNotFound,
+    /** Method not found on server */
+    ServerMethodNotFound,
+    /** Rpc threw exception on server */
+    ServerRpcError,
+    /** Rpc threw exception on server */
+    ServerRpcFailed,
+    /** Unknown error on server */
+    ServerUnknownError,
   }
 
   boolean success = false;
@@ -33,6 +48,7 @@ public class SocketRpcController implements RpcController {
   public void reset() {
     success = false;
     error = null;
+    reason = null;
   }
 
   public boolean failed() {

@@ -119,7 +119,7 @@ public class SocketRpcChannel implements RpcChannel {
       SocketRpcProtos.Response.Builder builder = SocketRpcProtos.Response
           .newBuilder().mergeFrom(in);
       if (!builder.isInitialized()) {
-        handleError(socketController, ErrorReason.ServerError,
+        handleError(socketController, ErrorReason.BadResponseProto,
             "Bad response from server", null);
         return;
       }
@@ -146,16 +146,16 @@ public class SocketRpcChannel implements RpcChannel {
     // Check for error
     socketController.success = true;
     if (rpcResponse.hasError()) {
-      handleError(socketController, ErrorReason.ServerError,
-          rpcResponse.getError(), null);
+      ErrorReason reason = getErrorReason(rpcResponse);
+      handleError(socketController, reason, rpcResponse.getError(), null);
     }
 
-    if ((callback == null) || !rpcResponse.hasResponseProto()) {
+    if ((callback == null) || !rpcResponse.getCallback()) {
       // No callback needed
       return;
     }
 
-    if (rpcResponse.getResponseProto().isEmpty()) {
+    if (!rpcResponse.hasResponseProto()) {
       // Callback was called with null on server side
       callback.run(null);
       return;
@@ -175,6 +175,25 @@ public class SocketRpcChannel implements RpcChannel {
       handleError(socketController, ErrorReason.BadResponseProto,
           "Response could be parsed as "
               + responsePrototype.getClass().getName(), e);
+    }
+  }
+
+  private ErrorReason getErrorReason(SocketRpcProtos.Response rpcResponse) {
+    switch (rpcResponse.getErrorReason()) {
+    case BAD_REQUEST_DATA:
+      return ErrorReason.ServerBadRequestData;
+    case BAD_REQUEST_PROTO:
+      return ErrorReason.ServerBadRequestProto;
+    case SERVICE_NOT_FOUND:
+      return ErrorReason.ServerServiceNotFound;
+    case METHOD_NOT_FOUND:
+      return ErrorReason.ServerMethodNotFound;
+    case RPC_ERROR:
+      return ErrorReason.ServerRpcError;
+    case RPC_FAILED:
+      return ErrorReason.ServerRpcFailed;
+    default:
+      return ErrorReason.ServerUnknownError;
     }
   }
 

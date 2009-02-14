@@ -245,6 +245,66 @@ public final class SocketRpcProtos {
       return com.googlecode.protobuf.socketrpc.SocketRpcProtos.internal_static_protobuf_socketrpc_Response_fieldAccessorTable;
     }
     
+    public static enum ServerErrorReason {
+      BAD_REQUEST_DATA(0, 0),
+      BAD_REQUEST_PROTO(1, 1),
+      SERVICE_NOT_FOUND(2, 2),
+      METHOD_NOT_FOUND(3, 3),
+      RPC_ERROR(4, 4),
+      RPC_FAILED(5, 5),
+      ;
+      
+      
+      public final int getNumber() { return value; }
+      
+      public static ServerErrorReason valueOf(int value) {
+        switch (value) {
+          case 0: return BAD_REQUEST_DATA;
+          case 1: return BAD_REQUEST_PROTO;
+          case 2: return SERVICE_NOT_FOUND;
+          case 3: return METHOD_NOT_FOUND;
+          case 4: return RPC_ERROR;
+          case 5: return RPC_FAILED;
+          default: return null;
+        }
+      }
+      
+      public final com.google.protobuf.Descriptors.EnumValueDescriptor
+          getValueDescriptor() {
+        return getDescriptor().getValues().get(index);
+      }
+      public final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptorForType() {
+        return getDescriptor();
+      }
+      public static final com.google.protobuf.Descriptors.EnumDescriptor
+          getDescriptor() {
+        return com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.getDescriptor().getEnumTypes().get(0);
+      }
+      
+      private static final ServerErrorReason[] VALUES = {
+        BAD_REQUEST_DATA, BAD_REQUEST_PROTO, SERVICE_NOT_FOUND, METHOD_NOT_FOUND, RPC_ERROR, RPC_FAILED, 
+      };
+      public static ServerErrorReason valueOf(
+          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+        if (desc.getType() != getDescriptor()) {
+          throw new java.lang.IllegalArgumentException(
+            "EnumValueDescriptor is not for this type.");
+        }
+        return VALUES[desc.getIndex()];
+      }
+      private final int index;
+      private final int value;
+      private ServerErrorReason(int index, int value) {
+        this.index = index;
+        this.value = value;
+      }
+      
+      static {
+        com.googlecode.protobuf.socketrpc.SocketRpcProtos.getDescriptor();
+      }
+    }
+    
     // optional bytes response_proto = 1;
     private boolean hasResponseProto;
     private com.google.protobuf.ByteString responseProto_ = com.google.protobuf.ByteString.EMPTY;
@@ -256,6 +316,18 @@ public final class SocketRpcProtos {
     private java.lang.String error_ = "";
     public boolean hasError() { return hasError; }
     public java.lang.String getError() { return error_; }
+    
+    // optional bool callback = 3 [default = false];
+    private boolean hasCallback;
+    private boolean callback_ = false;
+    public boolean hasCallback() { return hasCallback; }
+    public boolean getCallback() { return callback_; }
+    
+    // optional .protobuf.socketrpc.Response.ServerErrorReason error_reason = 4;
+    private boolean hasErrorReason;
+    private com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason errorReason_ = com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason.BAD_REQUEST_DATA;
+    public boolean hasErrorReason() { return hasErrorReason; }
+    public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason getErrorReason() { return errorReason_; }
     
     public static com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response parseFrom(
         com.google.protobuf.ByteString data)
@@ -402,6 +474,42 @@ public final class SocketRpcProtos {
         result.error_ = "";
         return this;
       }
+      
+      // optional bool callback = 3 [default = false];
+      public boolean hasCallback() {
+        return result.hasCallback();
+      }
+      public boolean getCallback() {
+        return result.getCallback();
+      }
+      public Builder setCallback(boolean value) {
+        result.hasCallback = true;
+        result.callback_ = value;
+        return this;
+      }
+      public Builder clearCallback() {
+        result.hasCallback = false;
+        result.callback_ = false;
+        return this;
+      }
+      
+      // optional .protobuf.socketrpc.Response.ServerErrorReason error_reason = 4;
+      public boolean hasErrorReason() {
+        return result.hasErrorReason();
+      }
+      public com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason getErrorReason() {
+        return result.getErrorReason();
+      }
+      public Builder setErrorReason(com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason value) {
+        result.hasErrorReason = true;
+        result.errorReason_ = value;
+        return this;
+      }
+      public Builder clearErrorReason() {
+        result.hasErrorReason = false;
+        result.errorReason_ = com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason.BAD_REQUEST_DATA;
+        return this;
+      }
     }
     
     static {
@@ -431,10 +539,16 @@ public final class SocketRpcProtos {
       "\n4src/main/com/googlecode/protobuf/socke" +
       "trpc/rpc.proto\022\022protobuf.socketrpc\"K\n\007Re" +
       "quest\022\024\n\014service_name\030\001 \002(\t\022\023\n\013method_na" +
-      "me\030\002 \002(\t\022\025\n\rrequest_proto\030\003 \002(\014\"1\n\010Respo" +
-      "nse\022\026\n\016response_proto\030\001 \001(\014\022\r\n\005error\030\002 \001" +
-      "(\tB4\n!com.googlecode.protobuf.socketrpcB" +
-      "\017SocketRpcProtos";
+      "me\030\002 \002(\t\022\025\n\rrequest_proto\030\003 \002(\014\"\237\002\n\010Resp" +
+      "onse\022\026\n\016response_proto\030\001 \001(\014\022\r\n\005error\030\002 " +
+      "\001(\t\022\027\n\010callback\030\003 \001(\010:\005false\022D\n\014error_re" +
+      "ason\030\004 \001(\0162..protobuf.socketrpc.Response" +
+      ".ServerErrorReason\"\214\001\n\021ServerErrorReason" +
+      "\022\024\n\020BAD_REQUEST_DATA\020\000\022\025\n\021BAD_REQUEST_PR" +
+      "OTO\020\001\022\025\n\021SERVICE_NOT_FOUND\020\002\022\024\n\020METHOD_N" +
+      "OT_FOUND\020\003\022\r\n\tRPC_ERROR\020\004\022\016\n\nRPC_FAILED\020" +
+      "\005B4\n!com.googlecode.protobuf.socketrpcB\017" +
+      "SocketRpcProtos";
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
@@ -453,7 +567,7 @@ public final class SocketRpcProtos {
           internal_static_protobuf_socketrpc_Response_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_protobuf_socketrpc_Response_descriptor,
-              new java.lang.String[] { "ResponseProto", "Error", },
+              new java.lang.String[] { "ResponseProto", "Error", "Callback", "ErrorReason", },
               com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.class,
               com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder.class);
           return null;

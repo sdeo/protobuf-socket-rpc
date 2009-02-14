@@ -8,12 +8,38 @@ option java_package = "com.googlecode.protobuf.socketrpc";
 option java_outer_classname = "SocketRpcProtos";
 
 message Request {
+
+  // RPC service full name
   required string service_name = 1;
+  
+  // RPC method name
   required string method_name = 2;
+  
+  // RPC request proto
   required bytes request_proto = 3;
 }
 
 message Response {
+
+  // RPC response proto
   optional bytes response_proto = 1;
+  
+  // Eror, if any
   optional string error = 2;
+  
+  // Was callback invoked
+  optional bool callback = 3 [default = false];
+  
+  // Possible error reasons
+  enum ServerErrorReason {
+    BAD_REQUEST_DATA = 0;
+    BAD_REQUEST_PROTO = 1;
+    SERVICE_NOT_FOUND = 2;
+    METHOD_NOT_FOUND = 3;
+    RPC_ERROR = 4;
+    RPC_FAILED = 5;
+  }
+  
+  // Error Reason
+  optional ServerErrorReason error_reason = 4;
 }

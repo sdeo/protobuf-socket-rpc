@@ -203,6 +203,12 @@ public final class TestProtos {
     public boolean hasStrData() { return hasStrData; }
     public java.lang.String getStrData() { return strData_; }
     
+    // optional int32 int_data = 2;
+    private boolean hasIntData;
+    private int intData_ = 0;
+    public boolean hasIntData() { return hasIntData; }
+    public int getIntData() { return intData_; }
+    
     public static com.googlecode.protobuf.socketrpc.TestProtos.Response parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -328,6 +334,24 @@ public final class TestProtos {
       public Builder clearStrData() {
         result.hasStrData = false;
         result.strData_ = "";
+        return this;
+      }
+      
+      // optional int32 int_data = 2;
+      public boolean hasIntData() {
+        return result.hasIntData();
+      }
+      public int getIntData() {
+        return result.getIntData();
+      }
+      public Builder setIntData(int value) {
+        result.hasIntData = true;
+        result.intData_ = value;
+        return this;
+      }
+      public Builder clearIntData() {
+        result.hasIntData = false;
+        result.intData_ = 0;
         return this;
       }
     }
@@ -462,11 +486,12 @@ public final class TestProtos {
     java.lang.String descriptorData =
       "\n5src/test/com/googlecode/protobuf/socke" +
       "trpc/test.proto\022\022protobuf.socketrpc\"\033\n\007R" +
-      "equest\022\020\n\010str_data\030\001 \002(\t\"\034\n\010Response\022\020\n\010" +
-      "str_data\030\001 \002(\t2V\n\013TestService\022G\n\nTestMet" +
-      "hod\022\033.protobuf.socketrpc.Request\032\034.proto" +
-      "buf.socketrpc.ResponseB/\n!com.googlecode" +
-      ".protobuf.socketrpcB\nTestProtos";
+      "equest\022\020\n\010str_data\030\001 \002(\t\".\n\010Response\022\020\n\010" +
+      "str_data\030\001 \002(\t\022\020\n\010int_data\030\002 \001(\0052V\n\013Test" +
+      "Service\022G\n\nTestMethod\022\033.protobuf.socketr" +
+      "pc.Request\032\034.protobuf.socketrpc.Response" +
+      "B/\n!com.googlecode.protobuf.socketrpcB\nT" +
+      "estProtos";
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
@@ -485,7 +510,7 @@ public final class TestProtos {
           internal_static_protobuf_socketrpc_Response_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_protobuf_socketrpc_Response_descriptor,
-              new java.lang.String[] { "StrData", },
+              new java.lang.String[] { "StrData", "IntData", },
               com.googlecode.protobuf.socketrpc.TestProtos.Response.class,
               com.googlecode.protobuf.socketrpc.TestProtos.Response.Builder.class);
           return null;
