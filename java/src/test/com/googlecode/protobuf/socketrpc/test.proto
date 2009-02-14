@@ -13,6 +13,7 @@ message Request {
 
 message Response {
   required string str_data = 1;
+  optional int32 int_data = 2;
 }
 
 service TestService {
