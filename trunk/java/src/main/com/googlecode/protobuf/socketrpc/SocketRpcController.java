@@ -22,6 +22,7 @@ package com.googlecode.protobuf.socketrpc;
 
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
  * Simple controller.
@@ -29,37 +30,6 @@ import com.google.protobuf.RpcController;
  * @author Shardul Deo
  */
 public class SocketRpcController implements RpcController {
-
-  /**
-   * Error reason, to be used client side
-   */
-  public enum ErrorReason {
-    // Client-side errors
-    /** Rpc was called with bad request proto */
-    BadRequestProto,
-    /** Rpc returned a bad response proto */
-    BadResponseProto,
-    /** Could not find supplied host */
-    UnknownHost,
-    /** I/O error while communicating with server */
-    IOError,
-
-    // Server-side errors
-    /** Server received bad request data */
-    ServerBadRequestData,
-    /** Server received bad request proto */
-    ServerBadRequestProto,
-    /** Service not found on server */
-    ServerServiceNotFound,
-    /** Method not found on server */
-    ServerMethodNotFound,
-    /** Rpc threw exception on server */
-    ServerRpcError,
-    /** Rpc threw exception on server */
-    ServerRpcFailed,
-    /** Unknown error on server */
-    ServerUnknownError,
-  }
 
   boolean success = false;
   String error = null;
@@ -76,7 +46,8 @@ public class SocketRpcController implements RpcController {
   }
 
   /**
-   * @return Reason for rpc error, to be used client side
+   * @return Reason for rpc error, to be used client side. Note that the reason
+   *         might have been specified by the server or client.
    */
   public ErrorReason errorReason() {
     return reason;

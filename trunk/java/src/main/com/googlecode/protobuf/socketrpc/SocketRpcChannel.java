@@ -38,7 +38,7 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.googlecode.protobuf.socketrpc.SocketRpcController.ErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
  * Socket implementation of {@link RpcChannel}. Makes a synchronous rpc call to
@@ -95,7 +95,7 @@ public class SocketRpcChannel implements RpcChannel {
 
     // Check request
     if (!request.isInitialized()) {
-      handleError(socketController, ErrorReason.BadRequestProto,
+      handleError(socketController, ErrorReason.INVALID_REQUEST_PROTO,
           "Request is uninitialized", null);
       return;
     }
@@ -106,11 +106,11 @@ public class SocketRpcChannel implements RpcChannel {
       out = new BufferedOutputStream(socket.getOutputStream());
       in = new BufferedInputStream(socket.getInputStream());
     } catch (UnknownHostException e) {
-      handleError(socketController, ErrorReason.UnknownHost,
+      handleError(socketController, ErrorReason.UNKNOWN_HOST,
           "Could not find host: " + host, e);
       return;
     } catch (IOException e) {
-      handleError(socketController, ErrorReason.IOError, String.format(
+      handleError(socketController, ErrorReason.IO_ERROR, String.format(
           "Could not open I/O for %s:%s", host, port), e);
       if (socket != null) {
         try {
@@ -139,14 +139,14 @@ public class SocketRpcChannel implements RpcChannel {
       SocketRpcProtos.Response.Builder builder = SocketRpcProtos.Response
           .newBuilder().mergeFrom(in);
       if (!builder.isInitialized()) {
-        handleError(socketController, ErrorReason.BadResponseProto,
+        handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
             "Bad response from server", null);
         return;
       }
       SocketRpcProtos.Response rpcResponse = builder.build();
       handleRpcResponse(responsePrototype, rpcResponse, socketController, done);
     } catch (IOException e) {
-      handleError(socketController, ErrorReason.IOError, String.format(
+      handleError(socketController, ErrorReason.IO_ERROR, String.format(
           "Error reading/writing for %s:%s", host, port), e);
     } finally {
       try {
@@ -166,8 +166,8 @@ public class SocketRpcChannel implements RpcChannel {
     // Check for error
     socketController.success = true;
     if (rpcResponse.hasError()) {
-      ErrorReason reason = getErrorReason(rpcResponse);
-      handleError(socketController, reason, rpcResponse.getError(), null);
+      handleError(socketController, rpcResponse.getErrorReason(),
+          rpcResponse.getError(), null);
     }
 
     if ((callback == null) || !rpcResponse.getCallback()) {
@@ -185,37 +185,19 @@ public class SocketRpcChannel implements RpcChannel {
       Message.Builder builder = responsePrototype.newBuilderForType()
           .mergeFrom(rpcResponse.getResponseProto());
       if (!builder.isInitialized()) {
-        handleError(socketController, ErrorReason.BadResponseProto,
+        handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
             "Uninitialized RPC Response Proto", null);
         return;
       }
       Message response = builder.build();
       callback.run(response);
     } catch (InvalidProtocolBufferException e) {
-      handleError(socketController, ErrorReason.BadResponseProto,
+      handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
           "Response could be parsed as "
               + responsePrototype.getClass().getName(), e);
     }
   }
 
-  private ErrorReason getErrorReason(SocketRpcProtos.Response rpcResponse) {
-    switch (rpcResponse.getErrorReason()) {
-    case BAD_REQUEST_DATA:
-      return ErrorReason.ServerBadRequestData;
-    case BAD_REQUEST_PROTO:
-      return ErrorReason.ServerBadRequestProto;
-    case SERVICE_NOT_FOUND:
-      return ErrorReason.ServerServiceNotFound;
-    case METHOD_NOT_FOUND:
-      return ErrorReason.ServerMethodNotFound;
-    case RPC_ERROR:
-      return ErrorReason.ServerRpcError;
-    case RPC_FAILED:
-      return ErrorReason.ServerRpcFailed;
-    default:
-      return ErrorReason.ServerUnknownError;
-    }
-  }
 
   private void handleError(SocketRpcController socketController,
       ErrorReason reason, String msg, Exception e) {

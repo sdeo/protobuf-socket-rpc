@@ -30,7 +30,7 @@ import java.net.Socket;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
  * Fake {@link Socket} used for unit tests.
@@ -87,7 +87,7 @@ public class FakeSocket extends Socket {
   }
 
   public FakeSocket withErrorResponseProto(String error,
-      ServerErrorReason reason) {
+      ErrorReason reason) {
     SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
         .newBuilder().setError(error).setErrorReason(reason).build();
     input = new ByteArrayInputStream(rpcResponse.toByteArray());

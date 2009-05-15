@@ -24,7 +24,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
 import com.googlecode.protobuf.socketrpc.TestProtos.Response;
 import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
@@ -39,11 +39,6 @@ import junit.framework.TestCase;
 public class SocketRpcServerTest extends TestCase {
 
   private final SocketRpcServer socketRpcServer = new SocketRpcServer(-1, null);
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
 
   private static class ServiceImpl extends TestService {
 
@@ -150,7 +145,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.BAD_REQUEST_DATA,
+    assertEquals(ErrorReason.BAD_REQUEST_DATA,
         socket.getResponse().getErrorReason());
   }
 
@@ -173,7 +168,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.SERVICE_NOT_FOUND,
+    assertEquals(ErrorReason.SERVICE_NOT_FOUND,
         socket.getResponse().getErrorReason());
   }
 
@@ -197,7 +192,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.METHOD_NOT_FOUND,
+    assertEquals(ErrorReason.METHOD_NOT_FOUND,
         socket.getResponse().getErrorReason());
   }
 
@@ -219,7 +214,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.BAD_REQUEST_PROTO,
+    assertEquals(ErrorReason.BAD_REQUEST_PROTO,
         socket.getResponse().getErrorReason());
   }
 
@@ -240,7 +235,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.RPC_ERROR,
+    assertEquals(ErrorReason.RPC_ERROR,
         socket.getResponse().getErrorReason());
   }
 
@@ -260,7 +255,7 @@ public class SocketRpcServerTest extends TestCase {
     // Verify result
     assertFalse(socket.getResponse().getCallback());
     assertTrue(socket.getResponse().hasError());
-    assertEquals(ServerErrorReason.RPC_FAILED,
+    assertEquals(ErrorReason.RPC_FAILED,
         socket.getResponse().getErrorReason());
   }
   private SocketRpcProtos.Request createRpcRequest(Request request) {
