@@ -32,8 +32,7 @@ import junit.framework.TestCase;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
-import com.googlecode.protobuf.socketrpc.SocketRpcController.ErrorReason;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
 import com.googlecode.protobuf.socketrpc.TestProtos.Response;
 import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
@@ -159,7 +158,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify error
     assertFalse(callback.invoked);
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.UnknownHost, controller.errorReason());
+    assertEquals(ErrorReason.UNKNOWN_HOST, controller.errorReason());
   }
 
   /**
@@ -183,7 +182,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify error
     assertFalse(callback.invoked);
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.IOError, controller.errorReason());
+    assertEquals(ErrorReason.IO_ERROR, controller.errorReason());
   }
 
   /**
@@ -208,7 +207,7 @@ public class SocketRpcChannelTest extends TestCase {
 
     // Verify
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.BadRequestProto, controller.errorReason());
+    assertEquals(ErrorReason.INVALID_REQUEST_PROTO, controller.errorReason());
     assertFalse(callback.invoked);
   }
 
@@ -292,7 +291,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify request was send and bad response received
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.IOError, controller.errorReason());
+    assertEquals(ErrorReason.IO_ERROR, controller.errorReason());
     assertFalse(callback.invoked);
   }
 
@@ -319,7 +318,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify request was send and bad response received
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.BadResponseProto, controller.errorReason());
+    assertEquals(ErrorReason.BAD_RESPONSE_PROTO, controller.errorReason());
     assertFalse(callback.invoked);
   }
 
@@ -347,7 +346,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify request was send and bad response received
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertTrue(controller.failed());
-    assertEquals(ErrorReason.BadResponseProto, controller.errorReason());
+    assertEquals(ErrorReason.BAD_RESPONSE_PROTO, controller.errorReason());
     assertFalse(callback.invoked);
   }
 
@@ -355,22 +354,16 @@ public class SocketRpcChannelTest extends TestCase {
    * Error on server side.
    */
   public void testErrorResponse() throws InvalidProtocolBufferException {
-    checkResponseWithError(ErrorReason.ServerBadRequestData,
-        ServerErrorReason.BAD_REQUEST_DATA);
-    checkResponseWithError(ErrorReason.ServerBadRequestProto,
-        ServerErrorReason.BAD_REQUEST_PROTO);
-    checkResponseWithError(ErrorReason.ServerServiceNotFound,
-        ServerErrorReason.SERVICE_NOT_FOUND);
-    checkResponseWithError(ErrorReason.ServerMethodNotFound,
-        ServerErrorReason.METHOD_NOT_FOUND);
-    checkResponseWithError(ErrorReason.ServerRpcError,
-        ServerErrorReason.RPC_ERROR);
-    checkResponseWithError(ErrorReason.ServerRpcFailed,
-        ServerErrorReason.RPC_FAILED);
+    checkResponseWithError(ErrorReason.BAD_REQUEST_DATA);
+    checkResponseWithError(ErrorReason.BAD_REQUEST_PROTO);
+    checkResponseWithError(ErrorReason.SERVICE_NOT_FOUND);
+    checkResponseWithError(ErrorReason.METHOD_NOT_FOUND);
+    checkResponseWithError(ErrorReason.RPC_ERROR);
+    checkResponseWithError(ErrorReason.RPC_FAILED);
   }
 
-  private void checkResponseWithError(ErrorReason expected,
-      ServerErrorReason reason) throws InvalidProtocolBufferException {
+  private void checkResponseWithError(ErrorReason reason)
+      throws InvalidProtocolBufferException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -390,7 +383,7 @@ public class SocketRpcChannelTest extends TestCase {
     // Verify request was send and error response received
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertTrue(controller.failed());
-    assertEquals(expected, controller.errorReason());
+    assertEquals(reason, controller.errorReason());
     assertEquals(error, controller.errorText());
     assertFalse(callback.invoked);
   }

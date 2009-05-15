@@ -40,7 +40,7 @@ import com.google.protobuf.RpcChannel;
 import com.google.protobuf.Service;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.ServerErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
  * Socket server for running rpc services. It can serve requests for any
@@ -160,19 +160,19 @@ public class SocketRpcServer {
             .newBuilder().mergeFrom(in);
         if (!builder.isInitialized()) {
           return handleError("Invalid request from client",
-              ServerErrorReason.BAD_REQUEST_DATA, null);
+              ErrorReason.BAD_REQUEST_DATA, null);
         }
         rpcRequest = builder.build();
       } catch (IOException e) {
         return handleError("Bad request data from client",
-            ServerErrorReason.BAD_REQUEST_DATA, e);
+            ErrorReason.BAD_REQUEST_DATA, e);
       }
 
       // Get the service/method
       Service service = serviceMap.get(rpcRequest.getServiceName());
       if (service == null) {
         return handleError("Could not find service: "
-            + rpcRequest.getServiceName(), ServerErrorReason.SERVICE_NOT_FOUND,
+            + rpcRequest.getServiceName(), ErrorReason.SERVICE_NOT_FOUND,
             null);
       }
       MethodDescriptor method = service.getDescriptorForType()
@@ -182,7 +182,7 @@ public class SocketRpcServer {
             String.format("Could not find method %s in service %s",
                 rpcRequest.getMethodName(),
                 service.getDescriptorForType().getFullName()),
-            ServerErrorReason.METHOD_NOT_FOUND, null);
+            ErrorReason.METHOD_NOT_FOUND, null);
       }
 
       // Parse request
@@ -192,11 +192,11 @@ public class SocketRpcServer {
             .mergeFrom(rpcRequest.getRequestProto());
         if (!builder.isInitialized()) {
           return handleError("Invalid request proto",
-              ServerErrorReason.BAD_REQUEST_PROTO, null);
+              ErrorReason.BAD_REQUEST_PROTO, null);
         }
       } catch (InvalidProtocolBufferException e) {
         return handleError("Invalid request proto",
-            ServerErrorReason.BAD_REQUEST_PROTO, e);
+            ErrorReason.BAD_REQUEST_PROTO, e);
       }
       Message request = builder.build();
 
@@ -208,7 +208,7 @@ public class SocketRpcServer {
         service.callMethod(method, socketController, request, callback);
       } catch (RuntimeException e) {
         return handleError("Error running method " + method.getFullName()
-            + rpcRequest.getMethodName(), ServerErrorReason.RPC_ERROR, e);
+            + rpcRequest.getMethodName(), ErrorReason.RPC_ERROR, e);
       }
 
       // Build and return response (callback is optional)
@@ -222,13 +222,13 @@ public class SocketRpcServer {
       }
       if (!socketController.success) {
         responseBuilder.setError(socketController.error);
-        responseBuilder.setErrorReason(ServerErrorReason.RPC_FAILED);
+        responseBuilder.setErrorReason(ErrorReason.RPC_FAILED);
       }
       return responseBuilder.build();
     }
 
     private SocketRpcProtos.Response handleError(String msg,
-        ServerErrorReason reason, Exception e) {
+        ErrorReason reason, Exception e) {
       LOG.log(Level.WARNING, reason + ": " + msg, e);
       return SocketRpcProtos.Response
           .newBuilder()
