@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 
 setup(
       name = "protobuf_socket_rpc",
-      version = "0.1",
+      version = "1.2",
       packages = find_packages('src/main'),
       package_dir = {'':'src/main'},      
       )
