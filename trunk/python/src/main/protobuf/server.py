@@ -242,9 +242,10 @@ class SocketRpcServer:
     
     serviceMap={}
     
-    def __init__(self,port):
+    def __init__(self,port,host='localhost'):
         '''port - Port this server is started on'''
         self.port = port
+        self.host = host
 
 
     def registerService(self,service):
@@ -255,5 +256,5 @@ class SocketRpcServer:
     def run(self):
         '''Activate the server.'''
         log.info('Running server on port %d' % self.port)
-        server = ThreadedTCPServer(('localhost',self.port),SocketHandler)
+        server = ThreadedTCPServer((self.host,self.port),SocketHandler)
         server.serve_forever()
