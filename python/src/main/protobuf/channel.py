@@ -294,9 +294,8 @@ class _LifeCycle():
 
         # Check for any outstanding errors
         if(self.rpcResponse.error):
-            self.controller.handleError(rpcResponse.error,
-                                   rpcResponse.error_reason,
-                                   None)
+            self.controller.handleError(self.rpcResponse.error,
+                                   self.rpcResponse.error_reason)
 
         # Run the callback, if there is one
         if done:
