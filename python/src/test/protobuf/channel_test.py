@@ -204,7 +204,7 @@ class TestSocketRpcChannel(unittest.TestCase):
                          'recvRpcMessage - normal usage')
         
 
-    def test_recvRpcMessage(self):
+    def test_recvRpcMessage_ioerror(self):
         '''Test recvRpcMessage - IOError.'''
     
         # Create a socket and service request
