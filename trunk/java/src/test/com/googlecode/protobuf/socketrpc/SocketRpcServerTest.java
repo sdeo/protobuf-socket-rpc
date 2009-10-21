@@ -20,6 +20,9 @@
 
 package com.googlecode.protobuf.socketrpc;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
@@ -76,6 +79,30 @@ public class SocketRpcServerTest extends TestCase {
       }
       done.run(response);
     }
+  }
+
+  /**
+   * Test rpc server running on the localhost only.
+ * @throws UnknownHostException
+   */
+  public void testRpcLocalServer() throws InvalidProtocolBufferException, UnknownHostException {
+    // Create data
+    String reqdata = "Request Data";
+    String resdata = "Response Data";
+    Request request = Request.newBuilder().setStrData(reqdata).build();
+    Response response = Response.newBuilder().setStrData(resdata).build();
+
+    SocketRpcServer socketRpcLocalServer = new SocketRpcServer(-1,
+    		0, InetAddress.getLocalHost(), null);
+
+    // Call handler
+    socketRpcLocalServer.registerService(new ServiceImpl().withCallback(response));
+    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
+    socketRpcLocalServer.new Handler(socket).run();
+
+    // Verify result
+    assertTrue(socket.getResponse().getCallback());
+    assertEquals(response.toByteString(), socket.getResponse().getResponseProto());
   }
 
   /**

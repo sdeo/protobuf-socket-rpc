@@ -25,6 +25,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -60,6 +61,8 @@ public class SocketRpcServer {
     new HashMap<String, Service>();
   private final ExecutorService executor;
   private final int port;
+  private final int backlog;
+  private final InetAddress bindAddr;
 
   /**
    * @param port Port that this server will be started on.
@@ -68,7 +71,32 @@ public class SocketRpcServer {
   public SocketRpcServer(int port, ExecutorService executorService) {
     this.port = port;
     this.executor = executorService;
+    this.backlog = 0;	// the default will be taken.
+    this.bindAddr = null;
   }
+
+	/**
+	 * Constructor with customization to pass into
+	 * java.net.ServerSocket(int port, int backlog, InetAddress bindAddr)
+	 *
+	 * @param port
+	 *            Port that this server will be started on.
+	 * @param backlog
+	 *            the maximum length of the queue. A value <=0 uses default
+	 *            backlog.
+	 * @param bindAddr
+	 *            the local InetAddress the server will bind to. A null value
+	 *            binds to any/all local ip addresses.
+	 * @param executorService
+	 *            executorService To be used for handling requests.
+	 */
+	public SocketRpcServer(int port, int backlog, InetAddress bindAddr,
+			ExecutorService executorService) {
+		this.port = port;
+		this.executor = executorService;
+		this.backlog = backlog;
+		this.bindAddr = bindAddr;
+	}
 
   /**
    * Register an rpc service implementation on this server.
@@ -84,7 +112,7 @@ public class SocketRpcServer {
    *           If there was an error starting up the server.
    */
   public void run() throws IOException {
-    ServerSocket serverSocket = new ServerSocket(port);
+    ServerSocket serverSocket = new ServerSocket(port, backlog, bindAddr);
 
     LOG.info("Listening for requests on port: " + port);
     try {
