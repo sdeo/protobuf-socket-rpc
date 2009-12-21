@@ -52,7 +52,6 @@ class TestServiceImpl(test_pb2.TestService):
 
 
     def TestMethod(self,controller,request,done):
-        
         # Raise an exception if one has been passed in
         if self.exception:
             raise self.exception

@@ -23,6 +23,7 @@
 
 Authors: Eric Saunders (esaunders@lcogt.net)
          Martin Norbury (mnorbury@lcogt.net)
+         Zach Walker (zwalker@lcogt.net)
 
 May 2009
 '''
@@ -30,10 +31,11 @@ May 2009
 # Add main protobuf module to classpath
 import sys
 sys.path.append('../../main')
+import traceback
 
 # Import required RPC modules
 import hello_world_pb2
-import protobuf.channel as ch
+import protobuf
 
 # Configure logging
 import logging
@@ -45,29 +47,33 @@ hostname = 'localhost'
 port     = 8090
 
 
-# Define a callback class
-class Callback:
-    def run(self,response):
-        self.data = response.hello_world
-
 # Create a request
 request = hello_world_pb2.HelloRequest()
-request.my_name = 'Eric'
+request.my_name = 'Zach'
 
-# Create the channel and controller
-channel    = ch.SocketRpcChannel(hostname,port)
-controller = channel.newController()
+# Create a new service instance
+service = protobuf.RpcService(hello_world_pb2.HelloWorldService_Stub,
+                              port,
+                              hostname)
 
-# Execute the service on the remote service
-callback = Callback()
-service  = hello_world_pb2.HelloWorldService_Stub(channel)
-service.HelloWorld(controller,request,callback)
+# Define a simple async callback
+def callback(request, response):
+    log.info('Asynchronous response :' + response.__str__())
+    
+# Make an asynchronous call
+try:
+    log.info('Making asynchronous call')
+    response = service.HelloWorld(request, callback=callback)
+except Exception, ex:
+    log.exception(ex)
 
-# Check for failure
-if controller.failed():
-    log.error(controller.success)
-    log.error(controller.error)
-    log.error(controller.reason)
-else:
-    log.info(callback.data)
+# Make a synchronous call
+try:
+    log.info('Making synchronous call')
+    response = service.HelloWorld(request, timeout=10000)
+    log.info('Synchronous response: ' + response.__str__())
+except Exception, ex:
+    log.exception(ex)
+
+
 
