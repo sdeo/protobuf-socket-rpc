@@ -37,8 +37,6 @@ import google.protobuf.service as service
 # Module imports
 from protobuf import logger
 
-log = logger.getLogger(__name__)
-
 
 
 class SocketRpcController(service.RpcController):
@@ -49,26 +47,25 @@ class SocketRpcController(service.RpcController):
 
     def __init__(self):
         '''Constructor which initializes the controller's state.'''
-        self.success = False
+        self.fail = False
         self.error   = None
         self.reason  = None
 
 
     def handleError(self,error_code,message):
         '''Log and set the controller state.'''
-        log.error(message)
-        self.success = False
+        self.fail = True
         self.reason  = error_code
         self.error   = message
 
 
     def reset(self):
         '''Resets the controller i.e. clears the error state.'''
-        self.success = False
+        self.fail = False
         self.error   = None
         self.reason  = None
         
     def failed(self):
         '''Returns True if the controller is in a failed state.'''
-        return not self.success
+        return self.fail
 

@@ -23,6 +23,7 @@
 
 Authors: Eric Saunders (esaunders@lcogt.net)
          Martin Norbury (mnorbury@lcogt.net)
+         Zach Walker (zwalker@lcogt.net)
 
 May 2009
 '''
@@ -57,9 +58,9 @@ class TestSocketRpcController(unittest.TestCase):
 
     def test___init__(self):
         '''Test SocketRpcController constructor.'''
-    
-        self.assertEqual(self.controller.success, False,
-                         "Attribute 'success' incorrectly initialized")
+        
+        self.assertEqual(self.controller.fail, False,
+                         "Attribute 'fail' incorrectly initialized")
 
         self.assertEqual(self.controller.error, None,
                          "Attribute 'error' incorrectly initialized")
@@ -72,7 +73,7 @@ class TestSocketRpcController(unittest.TestCase):
         '''Test handleError - normal usage.'''
     
         # Set the controller state to see if it is changed correctly
-        self.controller.success = True
+        self.controller.fail = False
         
         # Create an error code and message to pass in
         error_code = '4'
@@ -80,7 +81,7 @@ class TestSocketRpcController(unittest.TestCase):
         
         self.controller.handleError(error_code, message)
 
-        self.assertEqual(self.controller.success, False,
+        self.assertEqual(self.controller.fail, True,
                          "handleError - Attribute 'success'")
                          
         self.assertEqual(self.controller.reason, error_code,
@@ -94,14 +95,14 @@ class TestSocketRpcController(unittest.TestCase):
         '''Test reset - normal usage.'''
     
         # Set the controller state to see if it is changed correctly
-        self.controller.success    = True
+        self.controller.fail       = True
         self.controller.error_code = '4'
         self.controller.reason     = 'Chips are soggy'
 
         self.controller.reset()
         
-        self.assertEqual(self.controller.success, False,
-                         "reset - Attribute 'success'")
+        self.assertEqual(self.controller.fail, False,
+                         "reset - Attribute 'fail'")
 
         self.assertEqual(self.controller.error, None,
                          "reset - Attribute 'error'")
@@ -112,14 +113,15 @@ class TestSocketRpcController(unittest.TestCase):
 
     def test_failed(self):
         '''Test failed - normal usage.'''
+        self.controller.fail = False
     
-        self.assertEqual(self.controller.failed(), True, 
-                         "failed - failed state")
-
-        self.controller.success = True
-
         self.assertEqual(self.controller.failed(), False, 
-                         "failed - success state")
+                         "failed - no failure state")
+
+        self.controller.fail = True
+
+        self.assertEqual(self.controller.failed(), True, 
+                         "failed - failure state")
 
 
 def suite():

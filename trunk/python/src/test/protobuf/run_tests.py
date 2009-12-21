@@ -35,6 +35,7 @@ import channel_test
 import controller_test
 import error_test
 import server_test
+import service_test
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
@@ -42,5 +43,6 @@ if __name__ == '__main__':
     suite.addTest(controller_test.suite())
     suite.addTest(error_test.suite())
     suite.addTest(server_test.suite())
+    suite.addTest(service_test.suite())
     
     unittest.TextTestRunner(verbosity=0).run(suite)
