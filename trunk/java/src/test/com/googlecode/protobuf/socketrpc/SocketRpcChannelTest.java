@@ -32,10 +32,13 @@ import junit.framework.TestCase;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.ServiceException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
 import com.googlecode.protobuf.socketrpc.TestProtos.Response;
 import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
+import com.googlecode.protobuf.socketrpc.TestProtos.TestService.BlockingInterface;
+import com.sun.istack.internal.Nullable;
 
 /**
  * Unit tests for {@link SocketRpcChannel}
@@ -116,25 +119,22 @@ public class SocketRpcChannelTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
     Response response = Response.newBuilder().setStrData(resdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    FakeCallback callback = callAsync(rpcChannel, request, null);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request/response to socket
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
-        .getServiceName());
-    assertEquals(TestService.getDescriptor().getMethods().get(0).getName(),
-        socket.getRequest().getMethodName());
+    // Verify response
     assertTrue(callback.invoked);
     assertEquals(resdata, callback.response.getStrData());
+
+    // Call sync method
+    assertEquals(resdata, callSync(rpcChannel, request, null).getStrData());
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -145,20 +145,15 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().throwsException(new UnknownHostException()));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.UNKNOWN_HOST);
 
-    // Verify error
-    assertFalse(callback.invoked);
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.UNKNOWN_HOST, controller.errorReason());
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, ErrorReason.UNKNOWN_HOST));
   }
 
   /**
@@ -169,20 +164,15 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().throwsException(new IOException()));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.IO_ERROR);
 
-    // Verify error
-    assertFalse(callback.invoked);
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.IO_ERROR, controller.errorReason());
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, ErrorReason.IO_ERROR));
   }
 
   /**
@@ -194,21 +184,17 @@ public class SocketRpcChannelTest extends TestCase {
     Request request = Request.newBuilder().buildPartial(); // required missing
     Response response = Response.newBuilder().setStrData(resdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.INVALID_REQUEST_PROTO);
 
-    // Verify
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.INVALID_REQUEST_PROTO, controller.errorReason());
-    assertFalse(callback.invoked);
+    // Call sync method
+    assertNull(callSync(rpcChannel, request,
+        ErrorReason.INVALID_REQUEST_PROTO));
   }
 
   /**
@@ -219,24 +205,21 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withNoResponse(false);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    FakeCallback callback = callAsync(rpcChannel, request, null);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request/response to socket
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
-        .getServiceName());
-    assertEquals(TestService.getDescriptor().getMethods().get(0).getName(),
-        socket.getRequest().getMethodName());
+    // Verify callback not called
     assertFalse(callback.invoked);
+
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, null));
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -247,25 +230,22 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withNoResponse(true);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    FakeCallback callback = callAsync(rpcChannel, request, null);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request/response to socket
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
-        .getServiceName());
-    assertEquals(TestService.getDescriptor().getMethods().get(0).getName(),
-        socket.getRequest().getMethodName());
+    // Verify callback was called with null
     assertTrue(callback.invoked);
     assertNull(callback.response);
+
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, null));
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -276,23 +256,19 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket()
         .withInputBytes("bad response".getBytes());
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.IO_ERROR);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request was send and bad response received
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.IO_ERROR, controller.errorReason());
-    assertFalse(callback.invoked);
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, ErrorReason.IO_ERROR));
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -303,23 +279,19 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withResponseProto(ByteString
         .copyFrom("bad response".getBytes()));
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request was send and bad response received
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.BAD_RESPONSE_PROTO, controller.errorReason());
-    assertFalse(callback.invoked);
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO));
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -332,22 +304,18 @@ public class SocketRpcChannelTest extends TestCase {
     // incomplete response
     Response response = Response.newBuilder().setIntData(5).buildPartial();
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
-    FakeCallback callback = new FakeCallback();
-    service.testMethod(controller, request, callback);
+    // Call async method
+    callAsync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request, socket);
 
-    // Verify request was send and bad response received
-    assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertTrue(controller.failed());
-    assertEquals(ErrorReason.BAD_RESPONSE_PROTO, controller.errorReason());
-    assertFalse(callback.invoked);
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO));
+    verifyRequestToSocket(request, socket);
   }
 
   /**
@@ -369,22 +337,59 @@ public class SocketRpcChannelTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
     String error = "Error String";
 
-    // Create service
+    // Create channel
     FakeSocket socket = new FakeSocket().withErrorResponseProto(error, reason);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
-    SocketRpcController controller = rpcChannel.newRpcController();
-    TestService service = TestProtos.TestService.newStub(rpcChannel);
 
-    // Call rpc method
+    // Call async method
+    callAsync(rpcChannel, request, reason);
+    verifyRequestToSocket(request, socket);
+
+    // Call sync method
+    assertNull(callSync(rpcChannel, request, reason));
+    verifyRequestToSocket(request, socket);
+  }
+
+  private FakeCallback callAsync(SocketRpcChannel rpcChannel,
+      Request request, @Nullable ErrorReason reason) {
+    SocketRpcController controller = rpcChannel.newRpcController();
+    TestService service = TestService.newStub(rpcChannel);
     FakeCallback callback = new FakeCallback();
     service.testMethod(controller, request, callback);
+    if (reason != null) {
+      assertTrue(controller.failed());
+      assertEquals(reason, controller.errorReason());
+      assertTrue(callback.invoked);
+      assertNull(callback.response);
+    } else {
+      assertFalse(controller.failed());
+    }
+    return callback;
+  }
 
-    // Verify request was send and error response received
+  private Response callSync(SocketRpcChannel rpcChannel,
+      Request request, @Nullable ErrorReason reason) {
+    SocketRpcController controller = rpcChannel.newRpcController();
+    BlockingInterface service = TestService.newBlockingStub(rpcChannel);
+    try {
+      Response response = service.testMethod(controller, request);
+      assertNull(reason);
+      return response;
+    } catch (ServiceException e) {
+      assertEquals(reason, controller.errorReason());
+      return null;
+    } finally {
+      assertEquals(reason != null, controller.failed());
+    }
+  }
+
+  private void verifyRequestToSocket(Request request, FakeSocket socket)
+      throws InvalidProtocolBufferException {
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
-    assertTrue(controller.failed());
-    assertEquals(reason, controller.errorReason());
-    assertEquals(error, controller.errorText());
-    assertFalse(callback.invoked);
+    assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
+        .getServiceName());
+    assertEquals(TestService.getDescriptor().getMethods().get(0).getName(),
+        socket.getRequest().getMethodName());
   }
 }

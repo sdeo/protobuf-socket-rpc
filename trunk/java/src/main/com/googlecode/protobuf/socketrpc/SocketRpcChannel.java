@@ -32,28 +32,33 @@ import java.util.logging.Logger;
 
 import javax.net.SocketFactory;
 
+import com.google.protobuf.BlockingRpcChannel;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcChannel;
 import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response;
+import com.sun.istack.internal.Nullable;
 
 /**
- * Socket implementation of {@link RpcChannel}. Makes a synchronous rpc call to
- * a server running {@link SocketRpcServer} with the rpc method implementation
+ * Socket implementation of {@link RpcChannel}. Makes a synchronous RPC call to
+ * a server running {@link SocketRpcServer} with the RPC method implementation
  * running on it.
  * <p>
  * If an {@link RpcCallback} is given, the
  * {@link #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)}
- * method will invoke it with the same protobuf that the rpc method
+ * method will invoke it with the same protobuf that the RPC method
  * implementation on the server side invoked the callback with, or will not
- * invoke it if that was the case on the server side.
+ * invoke it if that was the case on the server side. If some error occurred,
+ * the callback will be invoked with null.
  *
  * @author Shardul Deo
  */
-public class SocketRpcChannel implements RpcChannel {
+public class SocketRpcChannel implements RpcChannel, BlockingRpcChannel {
 
   private final static Logger LOG =
     Logger.getLogger(SocketRpcChannel.class.getName());
@@ -89,15 +94,48 @@ public class SocketRpcChannel implements RpcChannel {
       Message request, Message responsePrototype, RpcCallback<Message> done) {
     // Must pass in a SocketRpcController
     SocketRpcController socketController = (SocketRpcController) controller;
+    try {
+      Response rpcResponse = makeSyncSocketRpc(method, socketController,
+          request);
+      Message response = handleRpcResponse(responsePrototype, rpcResponse,
+          socketController);
+
+      if ((done == null) || !rpcResponse.getCallback()) {
+        // No callback needed.
+        return;
+      }
+      done.run(response);
+    } catch (ServiceException e) {
+      // Call done with null
+      if (done != null) {
+        done.run(null);
+      }
+    }
+  }
+
+  @Override
+  public Message callBlockingMethod(MethodDescriptor method,
+      RpcController controller, Message request, Message responsePrototype)
+      throws ServiceException {
+    // Must pass in a SocketRpcController
+    SocketRpcController socketController = (SocketRpcController) controller;
+    Response rpcResponse = makeSyncSocketRpc(method, socketController,
+        request);
+    return handleRpcResponse(responsePrototype, rpcResponse, socketController);
+  }
+
+  private Response makeSyncSocketRpc(MethodDescriptor method,
+      SocketRpcController socketController, Message request)
+      throws ServiceException {
     Socket socket = null;
     OutputStream out = null;
     InputStream in = null;
 
     // Check request
+    socketController.success = true;
     if (!request.isInitialized()) {
       handleError(socketController, ErrorReason.INVALID_REQUEST_PROTO,
           "Request is uninitialized", null);
-      return;
     }
 
     // Open socket
@@ -108,7 +146,6 @@ public class SocketRpcChannel implements RpcChannel {
     } catch (UnknownHostException e) {
       handleError(socketController, ErrorReason.UNKNOWN_HOST,
           "Could not find host: " + host, e);
-      return;
     } catch (IOException e) {
       handleError(socketController, ErrorReason.IO_ERROR, String.format(
           "Could not open I/O for %s:%s", host, port), e);
@@ -119,7 +156,6 @@ public class SocketRpcChannel implements RpcChannel {
           // It's ok
         }
       }
-      return;
     }
 
     // Create RPC request protobuf
@@ -141,10 +177,8 @@ public class SocketRpcChannel implements RpcChannel {
       if (!builder.isInitialized()) {
         handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
             "Bad response from server", null);
-        return;
       }
-      SocketRpcProtos.Response rpcResponse = builder.build();
-      handleRpcResponse(responsePrototype, rpcResponse, socketController, done);
+      return builder.build();
     } catch (IOException e) {
       handleError(socketController, ErrorReason.IO_ERROR, String.format(
           "Error reading/writing for %s:%s", host, port), e);
@@ -157,28 +191,24 @@ public class SocketRpcChannel implements RpcChannel {
         LOG.log(Level.WARNING, "Error closing I/O", e);
       }
     }
+    // Will never reach here
+    return null;
   }
 
-  private void handleRpcResponse(Message responsePrototype,
+  private Message handleRpcResponse(Message responsePrototype,
       SocketRpcProtos.Response rpcResponse,
-      SocketRpcController socketController, RpcCallback<Message> callback) {
+      SocketRpcController socketController)
+      throws ServiceException {
 
     // Check for error
-    socketController.success = true;
     if (rpcResponse.hasError()) {
       handleError(socketController, rpcResponse.getErrorReason(),
           rpcResponse.getError(), null);
     }
 
-    if ((callback == null) || !rpcResponse.getCallback()) {
-      // No callback needed
-      return;
-    }
-
     if (!rpcResponse.hasResponseProto()) {
-      // Callback was called with null on server side
-      callback.run(null);
-      return;
+      // No response
+      return null;
     }
 
     try {
@@ -187,23 +217,28 @@ public class SocketRpcChannel implements RpcChannel {
       if (!builder.isInitialized()) {
         handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
             "Uninitialized RPC Response Proto", null);
-        return;
       }
-      Message response = builder.build();
-      callback.run(response);
+      return builder.build();
     } catch (InvalidProtocolBufferException e) {
       handleError(socketController, ErrorReason.BAD_RESPONSE_PROTO,
           "Response could be parsed as "
               + responsePrototype.getClass().getName(), e);
     }
+    // Should not reach here
+    return null;
   }
 
-
   private void handleError(SocketRpcController socketController,
-      ErrorReason reason, String msg, Exception e) {
-    LOG.log(Level.WARNING, reason + ": " + msg, e);
+      ErrorReason reason, String msg, @Nullable Exception e)
+      throws ServiceException {
+    if (e == null) {
+      LOG.log(Level.WARNING, reason + ": " + msg);
+    } else {
+      LOG.log(Level.WARNING, reason + ": " + msg, e);
+    }
     socketController.success = false;
     socketController.reason = reason;
     socketController.error = msg;
+    throw new ServiceException(msg);
   }
 }

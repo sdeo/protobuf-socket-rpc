@@ -104,6 +104,7 @@ public class FakeSocket extends Socket {
 
   @Override
   public InputStream getInputStream() throws IOException {
+    input.reset();
     return input;
   }
 
