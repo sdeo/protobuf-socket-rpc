@@ -22,7 +22,6 @@ package com.googlecode.protobuf.socketrpc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -103,24 +102,24 @@ public class FakeSocket extends Socket {
   // Overriden methods
 
   @Override
-  public InputStream getInputStream() throws IOException {
+  public InputStream getInputStream() {
     input.reset();
     return input;
   }
 
   @Override
-  public OutputStream getOutputStream() throws IOException {
+  public OutputStream getOutputStream() {
     output = new ByteArrayOutputStream();
     return output;
   }
 
   @Override
-  public void shutdownOutput() throws IOException {
+  public void shutdownOutput() {
     // no-op
   }
 
   @Override
-  public synchronized void close() throws IOException {
+  public synchronized void close() {
     // no-op
   }
 }

@@ -178,7 +178,7 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * Rpc called with incomplete request proto
    */
-  public void testIncompleteRequest() throws InvalidProtocolBufferException {
+  public void testIncompleteRequest() {
     // Create data
     String resdata = "Response Data";
     Request request = Request.newBuilder().buildPartial(); // required missing

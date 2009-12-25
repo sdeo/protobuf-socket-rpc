@@ -25,8 +25,6 @@ import java.net.UnknownHostException;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.RpcCallback;
-import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
 import com.googlecode.protobuf.socketrpc.TestProtos.Response;
@@ -41,51 +39,21 @@ import junit.framework.TestCase;
  */
 public class SocketRpcServerTest extends TestCase {
 
-  private final SocketRpcServer socketRpcServer = new SocketRpcServer(-1, null);
+  private SocketRpcServer socketRpcServer;
 
-  private static class ServiceImpl extends TestService {
-
-    private String error = null;
-    private RuntimeException rex = null;
-    private boolean invokeCallback = false;
-    private Response response = null;
-
-    private ServiceImpl failsWithError(String error) {
-      this.error = error;
-      return this;
-    }
-
-    private ServiceImpl throwsException(RuntimeException e) {
-      this.rex = e;
-      return this;
-    }
-
-    private ServiceImpl withCallback(Response response) {
-      invokeCallback = true;
-      this.response = response;
-      return this;
-    }
-
-    public void testMethod(RpcController controller, Request request,
-        RpcCallback<Response> done) {
-      if (error != null) {
-        controller.setFailed(error);
-      }
-      if (rex != null) {
-        throw rex;
-      }
-      if (!invokeCallback) {
-        return;
-      }
-      done.run(response);
-    }
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    socketRpcServer = new SocketRpcServer(-1, null);
   }
 
   /**
    * Test rpc server running on the localhost only.
- * @throws UnknownHostException
+   *
+   * @throws UnknownHostException
    */
-  public void testRpcLocalServer() throws InvalidProtocolBufferException, UnknownHostException {
+  public void testRpcLocalServer() throws InvalidProtocolBufferException,
+      UnknownHostException {
     // Create data
     String reqdata = "Request Data";
     String resdata = "Response Data";
@@ -96,13 +64,15 @@ public class SocketRpcServerTest extends TestCase {
     		0, InetAddress.getLocalHost(), null);
 
     // Call handler
-    socketRpcLocalServer.registerService(new ServiceImpl().withCallback(response));
+    socketRpcLocalServer.registerService(
+        new FakeServiceImpl().withResponse(response));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcLocalServer.new Handler(socket).run();
 
     // Verify result
     assertTrue(socket.getResponse().getCallback());
-    assertEquals(response.toByteString(), socket.getResponse().getResponseProto());
+    assertEquals(response.toByteString(),
+        socket.getResponse().getResponseProto());
   }
 
   /**
@@ -116,13 +86,15 @@ public class SocketRpcServerTest extends TestCase {
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().withCallback(response));
+    socketRpcServer.registerService(
+        new FakeServiceImpl().withResponse(response));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcServer.new Handler(socket).run();
 
     // Verify result
     assertTrue(socket.getResponse().getCallback());
-    assertEquals(response.toByteString(), socket.getResponse().getResponseProto());
+    assertEquals(response.toByteString(),
+        socket.getResponse().getResponseProto());
   }
 
   /**
@@ -134,7 +106,7 @@ public class SocketRpcServerTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl());
+    socketRpcServer.registerService(new FakeServiceImpl());
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcServer.new Handler(socket).run();
 
@@ -151,7 +123,7 @@ public class SocketRpcServerTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().withCallback(null));
+    socketRpcServer.registerService(new FakeServiceImpl().withResponse(null));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcServer.new Handler(socket).run();
 
@@ -165,7 +137,7 @@ public class SocketRpcServerTest extends TestCase {
    */
   public void testBadRequest() throws InvalidProtocolBufferException {
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl());
+    socketRpcServer.registerService(new FakeServiceImpl());
     FakeSocket socket = new FakeSocket().withInputBytes("bad bytes".getBytes());
     socketRpcServer.new Handler(socket).run();
 
@@ -187,7 +159,8 @@ public class SocketRpcServerTest extends TestCase {
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().withCallback(response));
+    socketRpcServer.registerService(
+        new FakeServiceImpl().withResponse(response));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
         "BadService", "", request.toByteString()));
     socketRpcServer.new Handler(socket).run();
@@ -210,7 +183,8 @@ public class SocketRpcServerTest extends TestCase {
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().withCallback(response));
+    socketRpcServer.registerService(
+        new FakeServiceImpl().withResponse(response));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
         TestService.getDescriptor().getFullName(), "BadMethod",
         request.toByteString()));
@@ -232,8 +206,10 @@ public class SocketRpcServerTest extends TestCase {
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().withCallback(response));
-    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(TestService.getDescriptor().getFullName(),
+    socketRpcServer.registerService(
+        new FakeServiceImpl().withResponse(response));
+    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
+        TestService.getDescriptor().getFullName(),
         TestService.getDescriptor().getMethods().get(0).getName(),
         ByteString.copyFrom("Bad Request".getBytes())));
     socketRpcServer.new Handler(socket).run();
@@ -248,14 +224,14 @@ public class SocketRpcServerTest extends TestCase {
   /**
    * RPC throws exception.
    */
-  public void testRPCException() throws InvalidProtocolBufferException {
+  public void testRpcException() throws InvalidProtocolBufferException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl()
-        .throwsException(new RuntimeException()));
+    socketRpcServer.registerService(
+        new FakeServiceImpl().throwsException(new RuntimeException()));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcServer.new Handler(socket).run();
 
@@ -275,16 +251,30 @@ public class SocketRpcServerTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Call handler
-    socketRpcServer.registerService(new ServiceImpl().failsWithError("Error"));
+    socketRpcServer.registerService(
+        new FakeServiceImpl().failsWithError("Error"));
     FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(request));
     socketRpcServer.new Handler(socket).run();
 
     // Verify result
     assertFalse(socket.getResponse().getCallback());
-    assertTrue(socket.getResponse().hasError());
+    assertEquals("Error", socket.getResponse().getError());
+    assertEquals(ErrorReason.RPC_FAILED,
+        socket.getResponse().getErrorReason());
+
+    // Call handler
+    socketRpcServer.registerBlockingService(
+        new FakeServiceImpl().failsWithError("New Error").toBlockingService());
+    socket = new FakeSocket().withRequest(createRpcRequest(request));
+    socketRpcServer.new Handler(socket).run();
+
+    // Verify result
+    assertFalse(socket.getResponse().getCallback());
+    assertEquals("New Error", socket.getResponse().getError());
     assertEquals(ErrorReason.RPC_FAILED,
         socket.getResponse().getErrorReason());
   }
+
   private SocketRpcProtos.Request createRpcRequest(Request request) {
     return createRpcRequest(TestService.getDescriptor().getFullName(),
         TestService.getDescriptor().getMethods().get(0).getName(),
