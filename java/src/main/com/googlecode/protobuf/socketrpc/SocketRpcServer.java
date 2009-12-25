@@ -28,19 +28,14 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.Message;
-import com.google.protobuf.RpcCallback;
+import com.google.protobuf.BlockingService;
 import com.google.protobuf.RpcChannel;
 import com.google.protobuf.Service;
-import com.google.protobuf.Descriptors.MethodDescriptor;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder;
+import com.googlecode.protobuf.socketrpc.RpcForwarder.RpcException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
@@ -57,8 +52,7 @@ public class SocketRpcServer {
   private static final Logger LOG =
     Logger.getLogger(SocketRpcServer.class.getName());
 
-  private final Map<String, Service> serviceMap =
-    new HashMap<String, Service>();
+  private final RpcForwarder rpcForwarder;
   private final ExecutorService executor;
   private final int port;
   private final int backlog;
@@ -69,29 +63,26 @@ public class SocketRpcServer {
    * @param executorService To be used for handling requests.
    */
   public SocketRpcServer(int port, ExecutorService executorService) {
-    this.port = port;
-    this.executor = executorService;
-    this.backlog = 0;	// the default will be taken.
-    this.bindAddr = null;
+    this(port, 0, null, executorService);
   }
 
-	/**
-	 * Constructor with customization to pass into
-	 * java.net.ServerSocket(int port, int backlog, InetAddress bindAddr)
-	 *
-	 * @param port
-	 *            Port that this server will be started on.
-	 * @param backlog
-	 *            the maximum length of the queue. A value <=0 uses default
-	 *            backlog.
-	 * @param bindAddr
-	 *            the local InetAddress the server will bind to. A null value
-	 *            binds to any/all local ip addresses.
-	 * @param executorService
-	 *            executorService To be used for handling requests.
-	 */
+  /**
+   * Constructor with customization to pass into java.net.ServerSocket(int port,
+   * int backlog, InetAddress bindAddr)
+   *
+   * @param port
+   *          Port that this server will be started on.
+   * @param backlog
+   *          the maximum length of the queue. A value <=0 uses default backlog.
+   * @param bindAddr
+   *          the local InetAddress the server will bind to. A null value binds
+   *          to any/all local ip addresses.
+   * @param executorService
+   *          executorService To be used for handling requests.
+   */
 	public SocketRpcServer(int port, int backlog, InetAddress bindAddr,
 			ExecutorService executorService) {
+	  this.rpcForwarder = new RpcForwarder();
 		this.port = port;
 		this.executor = executorService;
 		this.backlog = backlog;
@@ -99,10 +90,17 @@ public class SocketRpcServer {
 	}
 
   /**
-   * Register an rpc service implementation on this server.
+   * Register an RPC service implementation on this server.
    */
   public void registerService(Service service) {
-    serviceMap.put(service.getDescriptorForType().getFullName(), service);
+    rpcForwarder.registerService(service);
+  }
+
+  /**
+   * Register an RPC blocking service implementation on this server.
+   */
+  public void registerBlockingService(BlockingService service) {
+    rpcForwarder.registerBlockingService(service);
   }
 
   /**
@@ -196,87 +194,21 @@ public class SocketRpcServer {
             ErrorReason.BAD_REQUEST_DATA, e);
       }
 
-      // Get the service/method
-      Service service = serviceMap.get(rpcRequest.getServiceName());
-      if (service == null) {
-        return handleError("Could not find service: "
-            + rpcRequest.getServiceName(), ErrorReason.SERVICE_NOT_FOUND,
-            null);
-      }
-      MethodDescriptor method = service.getDescriptorForType()
-          .findMethodByName(rpcRequest.getMethodName());
-      if (method == null) {
-        return handleError(
-            String.format("Could not find method %s in service %s",
-                rpcRequest.getMethodName(),
-                service.getDescriptorForType().getFullName()),
-            ErrorReason.METHOD_NOT_FOUND, null);
-      }
-
-      // Parse request
-      Message.Builder builder;
       try {
-        builder = service.getRequestPrototype(method).newBuilderForType()
-            .mergeFrom(rpcRequest.getRequestProto());
-        if (!builder.isInitialized()) {
-          return handleError("Invalid request proto",
-              ErrorReason.BAD_REQUEST_PROTO, null);
-        }
-      } catch (InvalidProtocolBufferException e) {
-        return handleError("Invalid request proto",
-            ErrorReason.BAD_REQUEST_PROTO, e);
+        return rpcForwarder.doRPC(rpcRequest);
+      } catch (RpcException e) {
+        return handleError(e.msg, e.errorReason, e.getCause());
       }
-      Message request = builder.build();
-
-      // Call method
-      SocketRpcController socketController = new SocketRpcController();
-      socketController.success = true;
-      Callback callback = new Callback();
-      try {
-        service.callMethod(method, socketController, request, callback);
-      } catch (RuntimeException e) {
-        return handleError("Error running method " + method.getFullName()
-            + rpcRequest.getMethodName(), ErrorReason.RPC_ERROR, e);
-      }
-
-      // Build and return response (callback is optional)
-      Builder responseBuilder = SocketRpcProtos.Response.newBuilder();
-      if (callback.response != null) {
-        responseBuilder.setCallback(true).setResponseProto(
-            callback.response.toByteString());
-      } else {
-        // Set whether callback was called
-        responseBuilder.setCallback(callback.invoked);
-      }
-      if (!socketController.success) {
-        responseBuilder.setError(socketController.error);
-        responseBuilder.setErrorReason(ErrorReason.RPC_FAILED);
-      }
-      return responseBuilder.build();
     }
 
     private SocketRpcProtos.Response handleError(String msg,
-        ErrorReason reason, Exception e) {
-      LOG.log(Level.WARNING, reason + ": " + msg, e);
+        ErrorReason reason, Throwable throwable) {
+      LOG.log(Level.WARNING, reason + ": " + msg, throwable);
       return SocketRpcProtos.Response
           .newBuilder()
           .setError(msg)
           .setErrorReason(reason)
           .build();
-    }
-
-    /**
-     * Callback that just saves the response and the fact that it was invoked.
-     */
-    private class Callback implements RpcCallback<Message> {
-
-      private Message response;
-      private boolean invoked = false;
-
-      public void run(Message response) {
-        this.response = response;
-        invoked = true;
-      }
     }
   }
 }
