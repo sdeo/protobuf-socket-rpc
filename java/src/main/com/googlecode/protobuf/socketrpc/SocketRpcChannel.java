@@ -42,7 +42,6 @@ import com.google.protobuf.ServiceException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response;
-import com.sun.istack.internal.Nullable;
 
 /**
  * Socket implementation of {@link RpcChannel}. Makes a synchronous RPC call to
@@ -229,7 +228,7 @@ public class SocketRpcChannel implements RpcChannel, BlockingRpcChannel {
   }
 
   private void handleError(SocketRpcController socketController,
-      ErrorReason reason, String msg, @Nullable Exception e)
+      ErrorReason reason, String msg, Exception e)
       throws ServiceException {
     if (e == null) {
       LOG.log(Level.WARNING, reason + ": " + msg);
