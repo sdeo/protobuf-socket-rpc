@@ -25,24 +25,25 @@ import com.google.protobuf.RpcController;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
- * Simple controller.
+ * Simple {@link RpcController}.
  *
  * @author Shardul Deo
  */
 public class SocketRpcController implements RpcController {
 
-  boolean success = false;
+  // TODO Make these private
+  boolean failed = false;
   String error = null;
   ErrorReason reason = null;
 
   public void reset() {
-    success = false;
+    failed = false;
     error = null;
     reason = null;
   }
 
   public boolean failed() {
-    return !success;
+    return failed;
   }
 
   /**
@@ -64,8 +65,13 @@ public class SocketRpcController implements RpcController {
   }
 
   public void setFailed(String reason) {
-    success = false;
+    failed = true;
     error = reason;
+  }
+
+  public void setFailed(String error, ErrorReason errorReason) {
+    setFailed(error);
+    reason = errorReason;
   }
 
   public boolean isCanceled() {

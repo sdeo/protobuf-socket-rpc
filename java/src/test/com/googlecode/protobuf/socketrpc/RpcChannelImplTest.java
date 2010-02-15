@@ -20,9 +20,7 @@
 
 package com.googlecode.protobuf.socketrpc;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-
+import java.util.concurrent.Executor;
 
 import junit.framework.TestCase;
 
@@ -37,11 +35,25 @@ import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
 import com.googlecode.protobuf.socketrpc.TestProtos.TestService.BlockingInterface;
 
 /**
- * Unit tests for {@link SocketRpcChannel}
+ * Tests for {@link RpcChannelImpl}.
  *
  * @author Shardul Deo
  */
-public class SocketRpcChannelTest extends TestCase {
+public class RpcChannelImplTest extends TestCase {
+
+  private FakeSocket socket;
+  private RpcConnectionFactory connectionFactory;
+  private RpcChannelImpl rpcChannel;
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    socket = new FakeSocket();
+    connectionFactory = new SocketRpcConnectionFactory("host", 8080,
+        new FakeSocketFactory().returnsSocket(socket));
+    rpcChannel = new RpcChannelImpl(connectionFactory,
+        RpcChannels.SAME_THREAD_EXECUTOR);
+  }
 
   private static class FakeCallback implements RpcCallback<Response> {
 
@@ -60,61 +72,27 @@ public class SocketRpcChannelTest extends TestCase {
     String resdata = "Response Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
     Response response = Response.newBuilder().setStrData(resdata).build();
+    socket.withResponseProto(response);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
-
-    // Call async method
-    FakeCallback callback = callAsync(rpcChannel, request, null);
-    verifyRequestToSocket(request, socket);
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, null);
+    verifyRequestToSocket(request);
 
     // Verify response
     assertTrue(callback.invoked);
     assertEquals(resdata, callback.response.getStrData());
 
-    // Call sync method
-    assertEquals(resdata, callSync(rpcChannel, request, null).getStrData());
-    verifyRequestToSocket(request, socket);
-  }
+    // Call blocking method
+    assertEquals(resdata, callBlockingRpc(request, null).getStrData());
+    verifyRequestToSocket(request);
 
-  /**
-   * Error while creating socket
-   */
-  public void testUnknownHost() {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
+    // Call method asynchronously
+    callback = callAsyncRpc(request, null);
+    verifyRequestToSocket(request);
 
-    // Create channel
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().throwsException(new UnknownHostException()));
-
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.UNKNOWN_HOST);
-
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, ErrorReason.UNKNOWN_HOST));
-  }
-
-  /**
-   * Error while creating socket
-   */
-  public void testIOErrorWhileCreatingSocket() {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
-
-    // Create channel
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().throwsException(new IOException()));
-
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.IO_ERROR);
-
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, ErrorReason.IO_ERROR));
+    // Verify response
+    assertTrue(callback.invoked);
+    assertEquals(resdata, callback.response.getStrData());
   }
 
   /**
@@ -125,18 +103,17 @@ public class SocketRpcChannelTest extends TestCase {
     String resdata = "Response Data";
     Request request = Request.newBuilder().buildPartial(); // required missing
     Response response = Response.newBuilder().setStrData(resdata).build();
+    socket.withResponseProto(response);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
+    // Call non-blocking method
+    callRpc(request, ErrorReason.INVALID_REQUEST_PROTO);
 
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.INVALID_REQUEST_PROTO);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, ErrorReason.INVALID_REQUEST_PROTO));
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request,
-        ErrorReason.INVALID_REQUEST_PROTO));
+    // Call method asynchronously
+    callAsyncRpc(request, ErrorReason.INVALID_REQUEST_PROTO,
+        false /* no listener */);
   }
 
   /**
@@ -146,22 +123,25 @@ public class SocketRpcChannelTest extends TestCase {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
+    socket.withNoResponse(false /* callback */);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withNoResponse(false);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
-
-    // Call async method
-    FakeCallback callback = callAsync(rpcChannel, request, null);
-    verifyRequestToSocket(request, socket);
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, null);
+    verifyRequestToSocket(request);
 
     // Verify callback not called
     assertFalse(callback.invoked);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, null));
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, null));
+    verifyRequestToSocket(request);
+
+    // Call method asynchronously
+    callback = callAsyncRpc(request, null);
+    verifyRequestToSocket(request);
+
+    // Verify callback not called
+    assertFalse(callback.invoked);
   }
 
   /**
@@ -171,23 +151,27 @@ public class SocketRpcChannelTest extends TestCase {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
+    socket.withNoResponse(true /* callback */);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withNoResponse(true);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
-
-    // Call async method
-    FakeCallback callback = callAsync(rpcChannel, request, null);
-    verifyRequestToSocket(request, socket);
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, null);
+    verifyRequestToSocket(request);
 
     // Verify callback was called with null
     assertTrue(callback.invoked);
     assertNull(callback.response);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, null));
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, null));
+    verifyRequestToSocket(request);
+
+    // Call method asynchronously
+    callback = callAsyncRpc(request, null);
+    verifyRequestToSocket(request);
+
+    // Verify callback was called with null
+    assertTrue(callback.invoked);
+    assertNull(callback.response);
   }
 
   /**
@@ -197,20 +181,21 @@ public class SocketRpcChannelTest extends TestCase {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
+    socket.withInputBytes("bad response".getBytes());
 
-    // Create channel
-    FakeSocket socket = new FakeSocket()
-        .withInputBytes("bad response".getBytes());
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, ErrorReason.IO_ERROR);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
 
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.IO_ERROR);
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, ErrorReason.IO_ERROR));
+    verifyRequestToSocket(request);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, ErrorReason.IO_ERROR));
-    verifyRequestToSocket(request, socket);
+    // Call method asynchronously
+    callback = callAsyncRpc(request, ErrorReason.IO_ERROR);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
   }
 
   /**
@@ -220,20 +205,21 @@ public class SocketRpcChannelTest extends TestCase {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
+    socket.withResponseProto(ByteString.copyFrom("bad response".getBytes()));
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(ByteString
-        .copyFrom("bad response".getBytes()));
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
 
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO);
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, ErrorReason.BAD_RESPONSE_PROTO));
+    verifyRequestToSocket(request);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO));
-    verifyRequestToSocket(request, socket);
+    // Call method asynchronously
+    callback = callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
   }
 
   /**
@@ -245,19 +231,21 @@ public class SocketRpcChannelTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
     // incomplete response
     Response response = Response.newBuilder().setIntData(5).buildPartial();
+    socket.withResponseProto(response);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
 
-    // Call async method
-    callAsync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO);
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, ErrorReason.BAD_RESPONSE_PROTO));
+    verifyRequestToSocket(request);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, ErrorReason.BAD_RESPONSE_PROTO));
-    verifyRequestToSocket(request, socket);
+    // Call method asynchronously
+    callback = callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
   }
 
   /**
@@ -278,24 +266,25 @@ public class SocketRpcChannelTest extends TestCase {
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
     String error = "Error String";
+    socket.withErrorResponseProto(error, reason);
 
-    // Create channel
-    FakeSocket socket = new FakeSocket().withErrorResponseProto(error, reason);
-    SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
-        new FakeSocketFactory().returnsSocket(socket));
+    // Call non-blocking method
+    FakeCallback callback = callRpc(request, reason);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
 
-    // Call async method
-    callAsync(rpcChannel, request, reason);
-    verifyRequestToSocket(request, socket);
+    // Call blocking method
+    assertNull(callBlockingRpc(request, reason));
+    verifyRequestToSocket(request);
 
-    // Call sync method
-    assertNull(callSync(rpcChannel, request, reason));
-    verifyRequestToSocket(request, socket);
+    // Call method asynchronously
+    callback = callAsyncRpc(request, reason);
+    verifyRequestToSocket(request);
+    assertFalse(callback.invoked);
   }
 
-  private FakeCallback callAsync(SocketRpcChannel rpcChannel,
-      Request request, ErrorReason reason) {
-    SocketRpcController controller = rpcChannel.newRpcController();
+  private FakeCallback callRpc(Request request, ErrorReason reason) {
+    SocketRpcController controller = new SocketRpcController();
     TestService service = TestService.newStub(rpcChannel);
     FakeCallback callback = new FakeCallback();
     service.testMethod(controller, request, callback);
@@ -309,9 +298,50 @@ public class SocketRpcChannelTest extends TestCase {
     return callback;
   }
 
-  private Response callSync(SocketRpcChannel rpcChannel,
-      Request request, ErrorReason reason) {
-    SocketRpcController controller = rpcChannel.newRpcController();
+  /**
+   * Executor that just stores commands to be executed later.
+   */
+  private static class DelayedExecutor implements Executor {
+
+    private Runnable listener = null;
+
+    @Override
+    public void execute(Runnable command) {
+      listener = command;
+    }
+  }
+
+  private FakeCallback callAsyncRpc(Request request, ErrorReason reason) {
+    return callAsyncRpc(request, reason, true);
+  }
+
+  private FakeCallback callAsyncRpc(Request request, ErrorReason reason,
+      boolean hasListener) {
+    SocketRpcController controller = new SocketRpcController();
+    DelayedExecutor executor = new DelayedExecutor();
+    TestService service = TestService.newStub(
+        new RpcChannelImpl(connectionFactory, executor));
+    FakeCallback callback = new FakeCallback();
+    service.testMethod(controller, request, callback);
+
+    // Callback should not be called yet since it is async
+    assertFalse(callback.invoked);
+    assertEquals(hasListener, executor.listener != null);
+    if (hasListener) {
+      executor.listener.run();
+    }
+
+    if (reason != null) {
+      assertTrue(controller.failed());
+      assertEquals(reason, controller.errorReason());
+    } else {
+      assertFalse(controller.failed());
+    }
+    return callback;
+  }
+
+  private Response callBlockingRpc(Request request, ErrorReason reason) {
+    SocketRpcController controller = new SocketRpcController();
     BlockingInterface service = TestService.newBlockingStub(rpcChannel);
     try {
       Response response = service.testMethod(controller, request);
@@ -325,7 +355,7 @@ public class SocketRpcChannelTest extends TestCase {
     }
   }
 
-  private void verifyRequestToSocket(Request request, FakeSocket socket)
+  private void verifyRequestToSocket(Request request)
       throws InvalidProtocolBufferException {
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
