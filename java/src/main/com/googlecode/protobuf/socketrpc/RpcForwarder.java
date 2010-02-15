@@ -99,7 +99,6 @@ class RpcForwarder {
 
     // Call method
     SocketRpcController socketController = new SocketRpcController();
-    socketController.failed = false;
     try {
       Message response = blockingService.callBlockingMethod(method,
           socketController, request);
@@ -124,7 +123,6 @@ class RpcForwarder {
 
     // Call method
     SocketRpcController socketController = new SocketRpcController();
-    socketController.failed = false;
     Callback callback = new Callback();
     try {
       // TODO: Make this truly async by calling the method in another thread so
@@ -190,8 +188,8 @@ class RpcForwarder {
       // Set whether callback was called (in case of async)
       responseBuilder.setCallback(callbackInvoked);
     }
-    if (socketController.failed) {
-      responseBuilder.setError(socketController.error);
+    if (socketController.failed()) {
+      responseBuilder.setError(socketController.errorText());
       responseBuilder.setErrorReason(ErrorReason.RPC_FAILED);
     }
     return responseBuilder.build();

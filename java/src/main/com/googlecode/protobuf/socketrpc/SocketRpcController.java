@@ -31,10 +31,9 @@ import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
  */
 public class SocketRpcController implements RpcController {
 
-  // TODO Make these private
-  boolean failed = false;
-  String error = null;
-  ErrorReason reason = null;
+  private boolean failed = false;
+  private String error = null;
+  private ErrorReason reason = null;
 
   public void reset() {
     failed = false;
@@ -69,7 +68,7 @@ public class SocketRpcController implements RpcController {
     error = reason;
   }
 
-  public void setFailed(String error, ErrorReason errorReason) {
+  void setFailed(String error, ErrorReason errorReason) {
     setFailed(error);
     reason = errorReason;
   }
