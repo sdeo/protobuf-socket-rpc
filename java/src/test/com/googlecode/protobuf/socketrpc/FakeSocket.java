@@ -61,6 +61,10 @@ public class FakeSocket extends Socket {
     return this;
   }
 
+  public byte[] getOutputBytes() {
+    return output.toByteArray();
+  }
+
   // Methods used when the socket is used as a client socket
 
   public FakeSocket withNoResponse(boolean callback) {
