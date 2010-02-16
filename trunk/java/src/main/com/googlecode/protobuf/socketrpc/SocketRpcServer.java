@@ -33,18 +33,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.protobuf.BlockingService;
-import com.google.protobuf.RpcChannel;
 import com.google.protobuf.Service;
 import com.googlecode.protobuf.socketrpc.RpcForwarder.RpcException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
 /**
  * Socket server for running rpc services. It can serve requests for any
- * registered service from any client who is using {@link RpcChannel}.
+ * registered service from any client who is using a
+ * {@link SocketRpcConnectionFactory}.
  * <p>
  * Note that this server can only handle synchronous requests, so the client is
  * blocked until the callback is called by the service implementation.
- *
+ * 
  * @author Shardul Deo
  */
 public class SocketRpcServer {
@@ -57,6 +57,7 @@ public class SocketRpcServer {
   private final int port;
   private final int backlog;
   private final InetAddress bindAddr;
+  private final ServerThread serverThread;
 
   /**
    * @param port Port that this server will be started on.
@@ -87,6 +88,8 @@ public class SocketRpcServer {
 		this.executor = executorService;
 		this.backlog = backlog;
 		this.bindAddr = bindAddr;
+		this.serverThread = new ServerThread();
+		serverThread.setDaemon(true);
 	}
 
   /**
@@ -104,24 +107,102 @@ public class SocketRpcServer {
   }
 
   /**
-   * Start the server to listen for requests. This thread is blocked.
-   *
+   * Start the server to listen for requests. The calling thread is blocked
+   * permanently.
+   * 
    * @throws IOException
    *           If there was an error starting up the server.
    */
   public void run() throws IOException {
-    ServerSocket serverSocket = new ServerSocket(port, backlog, bindAddr);
+    serverThread.runServer();
+  }
 
-    LOG.info("Listening for requests on port: " + port);
-    try {
-      while (true) {
-        // Thread blocks here waiting for requests
-        executor.execute(new Handler(serverSocket.accept()));
+  /**
+   * Start the server to listen for requests in a separate. The calling thread
+   * is not blocked. The server runs in a daemon thread so the JVM will exit
+   * when no other thread is running. To manually shut down the server, call
+   * {@link #shutDown()}.
+   */
+  public void startServer() {
+    serverThread.start();
+  }
+
+  /**
+   * Returns a {@link Runnable} which runs the server. This is useful if you
+   * want to run the server using your own {@link ExecutorService}. Note that
+   * {@link #shutDown()} can still be used to stop the server.
+   */
+  public Runnable getServerRunnable() {
+    return serverThread;
+  }
+  
+  /**
+   * @return Whether the server is running.
+   */
+  public boolean isRunning() {
+    return serverThread.isRunning();
+  }
+
+  /**
+   * Stops this server. Any requests that are in progress are immediately shut
+   * down. Also the {@link ExecutorService} provided while constructing the
+   * server is also shut down.
+   */
+  public void shutDown() {
+    serverThread.stopServer();
+  }
+  
+  /**
+   * Thread that runs the server.
+   */
+  private class ServerThread extends Thread {
+    
+    private ServerSocket serverSocket;
+    
+    @Override
+    public void run() {
+      try {
+        runServer();
+      } catch (IOException e) {
+        LOG.log(Level.WARNING, "Error while running server", e);        
       }
-    } catch (IOException ex) {
+    }
+    
+    private void runServer() throws IOException {
+      serverSocket = new ServerSocket(port, backlog, bindAddr);
+      
+      LOG.info("Listening for requests on port: " + port);
+      try {
+        while (true) {
+          // Thread blocks here waiting for requests
+          executor.execute(new Handler(serverSocket.accept()));
+        }
+      } catch (IOException ex) {
+        if (!executor.isShutdown()) {
+          executor.shutdownNow();          
+        }
+        if (!serverSocket.isClosed()) {
+          serverSocket.close();          
+        }
+      }
+    }
+    
+    private boolean isRunning() {
+      return (serverSocket != null) && !serverSocket.isClosed();
+    }
+
+    private void stopServer() {
       LOG.info("Shutting down server");
-      executor.shutdown();
-      serverSocket.close();
+      if (!executor.isShutdown()) {
+        executor.shutdownNow();
+      }
+      try {
+        if (isRunning()) {
+          serverSocket.close();
+        }
+      } catch (IOException e) {
+        LOG.log(Level.WARNING, "Error while shutting down server", e);
+      }
     }
   }
 
