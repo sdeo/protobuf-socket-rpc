@@ -32,7 +32,7 @@ Nov 2009
 '''
 
 # Standard library imports
-from time import time, sleep
+from time import time
 import threading
 
 # Third party imports
@@ -138,8 +138,7 @@ class RpcService(object):
             
             Accepted Arguments:
             timeout -- (Integer) ms to wait for a response before returning
-        '''
-                
+        '''   
         # Define local callback function to handle RPC response
         # and initialize result dict
         result = {'done': False, 'response': None}
@@ -182,10 +181,7 @@ class RpcService(object):
         # Tight loop waiting for timeout or synch_callback to set done to True 
         while time() < end and not result['done']:
             if controller.failed():
-                if type(controller.error) is str:
-                    raise Exception(controller.error)
-                else:
-                    raise controller.error
+                raise Exception(controller.error())
         
         if time() >= end and not result['done']:
             raise RpcError('request timed out')

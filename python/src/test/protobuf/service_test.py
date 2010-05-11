@@ -46,7 +46,8 @@ import fake
 import protobuf.rpc_pb2 as rpc_pb2
 import test_pb2
 
-port = 63636
+success_port = 63636
+fail_port = 63637
 host = 'localhost'
 
 
@@ -55,24 +56,31 @@ class ServerThread(threading.Thread):
     '''Singleton class for starting a server thread'''
     
     # Singleton instance
-    instance = None
+    success_instance = None
+    fail_instance = None
     
-    def __init__(self):
+    def __init__(self, port, exception=None):
         threading.Thread.__init__(self)
-        self.test_service  = fake.TestServiceImpl()
+        if exception is None:
+            self.test_service  = fake.TestServiceImpl()
+        else:
+            self.test_service  = fake.TestServiceImpl(exception=exception)
         self.server        = server.SocketRpcServer(port)
         self.server.registerService(self.test_service)
         self.setDaemon(True)
     
     @staticmethod    
-    def start_server():
+    def start_server(success_port, fail_port, exception):
         '''Start the singleton instance if not already running
            Will not exit until the process ends 
         '''
         
-        if ServerThread.instance == None:
-            ServerThread.instance = ServerThread()
-            ServerThread.instance.start()
+        if ServerThread.success_instance == None:
+            ServerThread.success_instance = ServerThread(success_port, None)
+            ServerThread.success_instance.start()
+        if ServerThread.fail_instance == None:
+            ServerThread.fail_instance = ServerThread(fail_port, exception)
+            ServerThread.fail_instance.start()
     
     def run(self):
         self.server.run()
@@ -117,14 +125,16 @@ class TestRpcService(unittest.TestCase):
     
     def setUp(self):
         self.service = service.RpcService(test_pb2.TestService_Stub,
-                                          port,
+                                          success_port,
+                                          host)
+        self.fail_service = service.RpcService(test_pb2.TestService_Stub,
+                                          fail_port,
                                           host)
         self.request = test_pb2.Request()
         self.request.str_data = 'I like cheese'
-        self.callback = lambda request, response : response
         
         # Start a server thread
-        ServerThread.start_server()
+        ServerThread.start_server(success_port, fail_port, Exception('YOU FAIL!'))
         
     def tearDown(self):
         pass
@@ -136,7 +146,7 @@ class TestRpcService(unittest.TestCase):
                          test_pb2.TestService_Stub,
                          "Attribute 'port' incorrectly initialized")
         
-        self.assertEqual(self.service.port, port,
+        self.assertEqual(self.service.port, success_port,
                          "Attribute 'port' incorrectly initialized")
         
         self.assertEqual(self.service.host, host,
@@ -153,7 +163,6 @@ class TestRpcService(unittest.TestCase):
         try:
             self.service.TestMethod(self.request, callback=callback)
         except Exception, e:
-            traceback.print_exc()
             self.assert_(False, 'Caught an unexpected exception %s' % e)
             
         
@@ -172,7 +181,6 @@ class TestRpcService(unittest.TestCase):
         try:
             self.service.TestMethod(self.request, callback=TestRpcService.callback)
         except Exception, e:
-            traceback.print_exc()
             self.fail('Caught an unexpected exception %s' % e)
         
         TestRpcService.callback_method_condition.wait(2.0)
@@ -195,6 +203,16 @@ class TestRpcService(unittest.TestCase):
             self.fail('Caught an unexpected exception %s' % e)
         self.assertNotEqual(type(response) != None.__class__,
                             'Callback response was None')
+        
+    def test_call_synch_fail(self):
+        '''Test a synchronous call'''
+        self.assertRaises(Exception, self.fail_service.TestMethod, (self.request), {'timeout':1000})
+        try:
+            reponse = self.fail_service.TestMethod(self.request, timeout=1000)
+        except Exception, e:
+            self.assertEqual(e.message, "YOU FAIL!")     
+        
+
 
                 
             
@@ -202,7 +220,7 @@ class TestRpcThread(unittest.TestCase):
     ''' Unit tests for the protobuf.service.RpcThread class.'''         
 
     def setUp(self):
-        self.channel     = SocketRpcChannel(host=host, port=port)
+        self.channel     = SocketRpcChannel(host=host, port=success_port)
         self.controller  = self.channel.newController()
         self.service     = test_pb2.TestService_Stub(self.channel)
         self.request = test_pb2.Request()
@@ -213,7 +231,7 @@ class TestRpcThread(unittest.TestCase):
                                              self.controller,
                                              self.request,
                                              self.callback)
-        ServerThread.start_server()
+        ServerThread.start_server(success_port, fail_port, Exception('YOU FAIL!'))
         
     def tearDown(self):
         pass

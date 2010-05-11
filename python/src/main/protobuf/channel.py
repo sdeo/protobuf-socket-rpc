@@ -216,7 +216,7 @@ class _LifeCycle():
 
 
     def tryToValidateRequest(self, request):
-        if self.controller.error: return
+        if self.controller.failed(): return
 
         # Validate the request object
         try:
@@ -227,7 +227,7 @@ class _LifeCycle():
                                    
 
     def tryToOpenSocket(self):
-        if self.controller.error: return
+        if self.controller.failed(): return
         
         # Open socket
         try:
@@ -241,7 +241,7 @@ class _LifeCycle():
 
 
     def tryToSendRpcRequest(self, method, request):
-        if self.controller.error: return
+        if self.controller.failed(): return
         
         # Create an RPC request protobuf
         rpcRequest = self.channel.createRpcRequest(method, request)
@@ -254,7 +254,7 @@ class _LifeCycle():
 
 
     def tryToReceiveReply(self):
-        if self.controller.error: return
+        if self.controller.failed(): return
         
         # Get the reply
         try:
@@ -264,7 +264,7 @@ class _LifeCycle():
 
 
     def tryToParseReply(self):
-        if self.controller.error: return
+        if self.controller.failed(): return
         
         #Parse RPC reply 
         try:
@@ -275,27 +275,30 @@ class _LifeCycle():
 
 
     def tryToRetrieveServiceResponse(self, response_class):
-        if self.controller.error: return
+        if self.controller.failed(): return
         
-        # Extract service response
-        try:
-            self.serviceResponse = self.channel.parseResponse\
-                                  (self.rpcResponse.response_proto,
-                                  response_class)
-        except error.BadResponseProtoError, e:
-            self.controller.handleError(rpc_pb.BAD_RESPONSE_PROTO,
-                                        e.message)
+        if self.rpcResponse.HasField('error'):
+            self.controller.handleError(self.rpcResponse.error_reason,
+                                        self.rpcResponse.error)
+        else:
+            
+            # Extract service response
+            try:
+                self.serviceResponse = self.channel.parseResponse\
+                                      (self.rpcResponse.response_proto,
+                                      response_class)
+            except error.BadResponseProtoError, e:
+                self.controller.handleError(rpc_pb.BAD_RESPONSE_PROTO,
+                                            e.message)
 
 
     def tryToRunCallback(self, done):
-        if self.controller.error: return
-        
-        self.controller.success = True
+        if self.controller.failed(): return
 
         # Check for any outstanding errors
         if(self.rpcResponse.error):
-            self.controller.handleError(self.rpcResponse.error,
-                                   self.rpcResponse.error_reason)
+            self.controller.handleError(self.rpcResponse.error_reason,
+                                        self.rpcResponse.error)
 
         # Run the callback, if there is one
         if done:

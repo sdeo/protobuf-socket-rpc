@@ -29,6 +29,7 @@ May 2009
 
 # Standard library imports
 import socket
+import traceback
 
 # Module imports
 import protobuf.channel as ch
@@ -41,7 +42,6 @@ class TestServiceImpl(test_pb2.TestService):
     '''Implements a simple service class for use in testing.'''
 
     def __init__(self,exception=None,failmsg=None):
-    
         # Set some fixed response data
         self.response_str_data = 'And the lord taketh away'
         self.response_int_data = 42
@@ -55,7 +55,7 @@ class TestServiceImpl(test_pb2.TestService):
         # Raise an exception if one has been passed in
         if self.exception:
             raise self.exception
-        
+ 
         # Extract request message contents
         str_data = request.str_data
         
@@ -66,8 +66,7 @@ class TestServiceImpl(test_pb2.TestService):
 
         # Simulate a user specified failure
         if self.failmsg:
-            controller.success = False
-            controller.error   = self.failmsg
+            controller.handleError(-1, self.failmsg)
             
         # As per specification, call the run method of the done callback
         done.run(response)

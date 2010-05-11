@@ -59,10 +59,10 @@ class TestSocketRpcController(unittest.TestCase):
     def test___init__(self):
         '''Test SocketRpcController constructor.'''
         
-        self.assertEqual(self.controller.fail, False,
+        self.assertEqual(self.controller._fail, False,
                          "Attribute 'fail' incorrectly initialized")
 
-        self.assertEqual(self.controller.error, None,
+        self.assertEqual(self.controller._error, None,
                          "Attribute 'error' incorrectly initialized")
 
         self.assertEqual(self.controller.reason, None,
@@ -73,7 +73,7 @@ class TestSocketRpcController(unittest.TestCase):
         '''Test handleError - normal usage.'''
     
         # Set the controller state to see if it is changed correctly
-        self.controller.fail = False
+        self.controller._fail = False
         
         # Create an error code and message to pass in
         error_code = '4'
@@ -81,13 +81,13 @@ class TestSocketRpcController(unittest.TestCase):
         
         self.controller.handleError(error_code, message)
 
-        self.assertEqual(self.controller.fail, True,
+        self.assertEqual(self.controller._fail, True,
                          "handleError - Attribute 'success'")
                          
         self.assertEqual(self.controller.reason, error_code,
                          "handleError - Attribute 'reason'")
 
-        self.assertEqual(self.controller.error, message,
+        self.assertEqual(self.controller._error, message,
                          "handleError - Attribute 'error'")
 
 
@@ -95,16 +95,16 @@ class TestSocketRpcController(unittest.TestCase):
         '''Test reset - normal usage.'''
     
         # Set the controller state to see if it is changed correctly
-        self.controller.fail       = True
-        self.controller.error_code = '4'
-        self.controller.reason     = 'Chips are soggy'
+        self.controller._fail       = True
+        self.controller.reason = '4'
+        self.controller._error     = 'Chips are soggy'
 
         self.controller.reset()
         
-        self.assertEqual(self.controller.fail, False,
+        self.assertEqual(self.controller._fail, False,
                          "reset - Attribute 'fail'")
 
-        self.assertEqual(self.controller.error, None,
+        self.assertEqual(self.controller._error, None,
                          "reset - Attribute 'error'")
 
         self.assertEqual(self.controller.reason, None,
@@ -113,12 +113,12 @@ class TestSocketRpcController(unittest.TestCase):
 
     def test_failed(self):
         '''Test failed - normal usage.'''
-        self.controller.fail = False
+        self.controller._fail = False
     
         self.assertEqual(self.controller.failed(), False, 
                          "failed - no failure state")
 
-        self.controller.fail = True
+        self.controller._fail = True
 
         self.assertEqual(self.controller.failed(), True, 
                          "failed - failure state")

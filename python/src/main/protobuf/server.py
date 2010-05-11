@@ -78,12 +78,17 @@ class Callback():
 
 class SocketHandler(SocketServer.StreamRequestHandler):
     '''Handler for service requests.'''
+    
+    def __init__(self, request, client_address, server, socket_rpc_server):
+        self.socket_rpc_server = socket_rpc_server
+        SocketServer.StreamRequestHandler.__init__(self, request, client_address, server)
+        
 
     def handle(self):
         '''Entry point for handler functionality.'''
         log.debug('Got a request')
         
-        # Parse the incoming request        
+        # Parse the incoming request         
         recv = self.rfile.read()
 
         # Evaluate and execute the request
@@ -156,7 +161,7 @@ class SocketHandler(SocketServer.StreamRequestHandler):
 
     def retrieveService(self, service_name):
         '''Match the service request to a registered service.'''
-        service = SocketRpcServer.serviceMap.get(service_name)
+        service = self.socket_rpc_server.serviceMap.get(service_name)
         if service is None:
             msg = "Could not find service '%s'" % service_name
             raise error.ServiceNotFoundError(msg)
@@ -178,7 +183,10 @@ class SocketHandler(SocketServer.StreamRequestHandler):
     def retrieveProtoRequest(self, service, method, request):
         ''' Retrieve the users protocol message from the RPC message'''
         proto_request = service.GetRequestClass(method)()
-        proto_request.ParseFromString(request.request_proto)
+        try:
+   	    proto_request.ParseFromString(request.request_proto)
+        except Exception, e:
+            raise error.BadRequestProtoError(e.message)
         
         # Check the request parsed correctly
         if not proto_request.IsInitialized():
@@ -195,7 +203,6 @@ class SocketHandler(SocketServer.StreamRequestHandler):
 
         # Create the controller (initialised to success) and callback
         controller = SocketRpcController()
-        controller.success = True
         callback = Callback()
         try:
             service.CallMethod(method,controller,proto_request,callback)
@@ -211,8 +218,8 @@ class SocketHandler(SocketServer.StreamRequestHandler):
             response.callback = callback.invoked
 
         # Check to see if controller has been set to not success by user.
-        if not controller.success:
-            response.error = controller.error
+        if controller.failed():
+            response.error = controller.error()
             response.error_reason  = rpc_pb.RPC_FAILED
 
         return response
@@ -227,34 +234,40 @@ class SocketHandler(SocketServer.StreamRequestHandler):
         response = rpc_pb.Response()
         response.error_reason = e.rpc_error_code
         response.error = e.message
-        
         return response
 
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn,SocketServer.TCPServer):
     SocketServer.allow_reuse_address = True
+    
+    def __init__(self, server_address, RequestHandlerClass, socket_rpc_server):
+        """Constructor.  May be extended, do not override."""
+        SocketServer.TCPServer.__init__(self, server_address, RequestHandlerClass)
+        self.socket_rpc_server = socket_rpc_server
 
+    def finish_request(self, request, client_address):
+        """Finish one request by instantiating RequestHandlerClass."""
+        self.RequestHandlerClass(request, client_address, self, self.socket_rpc_server)
 
 
 class SocketRpcServer:
     '''Socket server for running rpc services.'''
     
-    serviceMap={}
-    
     def __init__(self,port,host='localhost'):
         '''port - Port this server is started on'''
         self.port = port
         self.host = host
+        self.serviceMap = {}
 
 
     def registerService(self,service):
         '''Register an RPC service.'''
-        SocketRpcServer.serviceMap[service.GetDescriptor().full_name] = service
+        self.serviceMap[service.GetDescriptor().full_name] = service
  
         
     def run(self):
         '''Activate the server.'''
         log.info('Running server on port %d' % self.port)
-        server = ThreadedTCPServer((self.host,self.port),SocketHandler)
+        server = ThreadedTCPServer((self.host,self.port),SocketHandler, self)
         server.serve_forever()
