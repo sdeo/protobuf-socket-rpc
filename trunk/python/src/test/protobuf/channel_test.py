@@ -471,8 +471,6 @@ class Test__LifeCycle(unittest.TestCase):
     def test_tryToValidateRequest_con_error(self):
         '''Test tryToValidateRequest - controller in error state.'''
         
-        self.controller.success = False
-        
         self.assertEquals(self.lc.tryToValidateRequest(self.rpc_request), 
                      None, "tryToValidateRequest - controller in error state")
 
@@ -502,7 +500,7 @@ class Test__LifeCycle(unittest.TestCase):
     def test_tryToOpenSocket_con_error(self):
         '''Test tryToOpenSocket - controller in error state.'''
 
-        self.controller.error = True
+        self.controller._fail = True
         self.lc.tryToOpenSocket()
         self.assertEquals(self.lc.sock, None,
                           "tryToOpenSocket - controller in error state")
@@ -681,9 +679,6 @@ class Test__LifeCycle(unittest.TestCase):
         
         self.assertEquals(self.lc.tryToRunCallback(callback), None,
                           "tryToRunCallback - normal usage")
-
-        self.assert_(self.controller.success,
-                     "tryToRunCallback - contoller success flag set")
 
 
 def suite():

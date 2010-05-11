@@ -35,6 +35,7 @@ sys.path.append('../../main')
 import unittest
 
 # Third-party imports
+from google.protobuf.message import DecodeError
 
 # Module imports
 import protobuf.server as server
@@ -94,6 +95,7 @@ class TestSocketHandler(unittest.TestCase):
         # Define an RPC request with the service request as payload
         self.rpc_request = rpc_pb2.Request()
         self.rpc_request.request_proto = self.serialized_request
+        self.testserver = server.SocketRpcServer(8090)
         
            
     def tearDown(self):
@@ -119,10 +121,9 @@ class TestSocketHandler(unittest.TestCase):
         '''Convenience function to set up a test service.'''
 
         # Set up a simple test service    
-        testserver = server.SocketRpcServer(8090)
         service    = TestServiceImpl(exception,failmsg)
         
-        testserver.registerService(service)
+        self.testserver.registerService(service)
 
         return service
 
@@ -152,7 +153,9 @@ class TestSocketHandler(unittest.TestCase):
         expected_rpc.callback = True
         expected_rpc.response_proto = serialized_payload
         
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr,
+                                       self.testserver)
         
         response = handler.callMethod(service, method, self.service_request)
         
@@ -174,7 +177,9 @@ class TestSocketHandler(unittest.TestCase):
          # Serialize the request
         (bytestream, sock) = self.serializeRpcRequestToSocket()
         
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr,
+                                       self.testserver)
         
         response = handler.callMethod(service, method, self.service_request)
         
@@ -198,7 +203,9 @@ class TestSocketHandler(unittest.TestCase):
          # Serialize the request
         (bytestream, sock) = self.serializeRpcRequestToSocket()
         
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr,
+                                       self.testserver)
         
         self.assertRaises(error.RpcError,handler.callMethod,service, method,
                           self.service_request)
@@ -214,7 +221,8 @@ class TestSocketHandler(unittest.TestCase):
         # Serialize the request
         (bytestream, sock) = self.serializeRpcRequestToSocket()
         
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         self.assertEqual(handler.parseServiceRequest(bytestream),
                          self.rpc_request, "Parsing request - normal return")
 
@@ -229,7 +237,8 @@ class TestSocketHandler(unittest.TestCase):
         (bytestream, sock) = self.serializeRpcRequestToSocket(partial = True)
 
         # Test the server handler raises the BAD_REQUEST_DATA error code
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         self.assertRaises(error.BadRequestDataError,
                           handler.parseServiceRequest, bytestream)
 
@@ -243,7 +252,8 @@ class TestSocketHandler(unittest.TestCase):
         sock = socket_factory.createSocket()
 
         # Test the server handler raises the BAD_REQUEST_DATA error code
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         self.assertRaises(error.BadRequestDataError,
                           handler.parseServiceRequest, bytestream)
     
@@ -260,7 +270,8 @@ class TestSocketHandler(unittest.TestCase):
 
         # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
 
         # Run the method on the server
         received_service = handler.retrieveService(self.rpc_request.service_name)
@@ -279,7 +290,8 @@ class TestSocketHandler(unittest.TestCase):
 
         # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
 
         # Run the method on the server        
         self.assertRaises(error.ServiceNotFoundError, handler.retrieveService, 
@@ -299,7 +311,8 @@ class TestSocketHandler(unittest.TestCase):
 
         # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)        
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
 
         # Run the method on the server
         received_method = handler.retrieveMethod(expected_service, 
@@ -320,7 +333,8 @@ class TestSocketHandler(unittest.TestCase):
 
         # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)        
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
 
         # Run the method on the server
         self.assertRaises(error.MethodNotFoundError, handler.retrieveMethod, 
@@ -343,7 +357,8 @@ class TestSocketHandler(unittest.TestCase):
         
          # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         
         proto_request = handler.retrieveProtoRequest(expected_service, 
                                                      expected_method, 
@@ -369,13 +384,14 @@ class TestSocketHandler(unittest.TestCase):
         
          # Serialize the request and create the socket handler
         (bytestream, sock) = self.serializeRpcRequestToSocket()
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         
         # Force a bad protocol message
         self.rpc_request.request_proto = "Bad protocol message"
         
         # Run the method
-        self.assertRaises(error.BadRequestProtoError, 
+        self.assertRaises(error.BadRequestProtoError,
                           handler.retrieveProtoRequest, 
                           expected_service, expected_method, self.rpc_request)
                 
@@ -404,7 +420,8 @@ class TestSocketHandler(unittest.TestCase):
         expected_rpc.response_proto = serialized_payload
 
         # Run the method on the server
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         received_rpc = handler.validateAndExecuteRequest(bytestream)
                 
         # Check the response message error code
@@ -422,7 +439,8 @@ class TestSocketHandler(unittest.TestCase):
         (bytestream, sock) = self.serializeRpcRequestToSocket()
         
         # Run the method on the server
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         response = handler.validateAndExecuteRequest(bytestream)
         
         # Check the response message error code
@@ -444,7 +462,8 @@ class TestSocketHandler(unittest.TestCase):
         (bytestream, sock) = self.serializeRpcRequestToSocket()
         
         # Run the method on the server
-        handler = server.SocketHandler(sock, self.client_addr, self.server_addr)
+        handler = server.SocketHandler(sock, self.client_addr,
+                                       self.server_addr, self.testserver)
         response = handler.validateAndExecuteRequest(bytestream)
         
         # Check the response message error code

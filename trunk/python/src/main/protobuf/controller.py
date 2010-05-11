@@ -47,25 +47,29 @@ class SocketRpcController(service.RpcController):
 
     def __init__(self):
         '''Constructor which initializes the controller's state.'''
-        self.fail = False
-        self.error   = None
+        self._fail = False
+        self._error   = None
         self.reason  = None
 
 
     def handleError(self,error_code,message):
         '''Log and set the controller state.'''
-        self.fail = True
+        self._fail = True
         self.reason  = error_code
-        self.error   = message
+        self._error   = message
 
 
     def reset(self):
         '''Resets the controller i.e. clears the error state.'''
-        self.fail = False
-        self.error   = None
+        self._fail = False
+        self._error   = None
         self.reason  = None
         
     def failed(self):
         '''Returns True if the controller is in a failed state.'''
-        return self.fail
+        return self._fail
+    
+    def error(self):
+        return self._error
+    
 
