@@ -20,6 +20,7 @@
 
 package com.googlecode.protobuf.socketrpc;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -34,18 +35,21 @@ import com.google.protobuf.MessageLite;
 public interface RpcConnectionFactory {
 
   /**
-   * Create a connection over which an rpc can be performed. Note that only one
-   * rpc should be performed over the connection returned. i.e.
+   * Create a connection over which an RPC can be performed. Note that only one
+   * RPC should be performed over the connection returned. i.e.
    * {@link Connection#sendProtoMessage(MessageLite)} and
    * {@link Connection#receiveProtoMessage(MessageLite.Builder)} can be called
    * just once.
+   * <p>
+   * In the case of a server side connection, this method might block the
+   * calling thread until a client makes a request.
    */
   Connection createConnection() throws UnknownHostException, IOException;
 
   /**
-   * Client/Server connection for performing an rpc.
+   * Client/Server connection for performing an RPC.
    */
-  public interface Connection {
+  public interface Connection extends Closeable {
 
     /**
      * Send the given protocol buffer message over the connection.

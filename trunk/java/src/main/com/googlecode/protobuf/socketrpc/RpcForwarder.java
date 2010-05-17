@@ -27,6 +27,7 @@ import com.google.protobuf.BlockingService;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.RpcCallback;
+import com.google.protobuf.RpcController;
 import com.google.protobuf.Service;
 import com.google.protobuf.ServiceException;
 import com.google.protobuf.Descriptors.MethodDescriptor;
@@ -39,6 +40,10 @@ import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Response.Builder;
 /**
  * Proxy that handles the RPC received by the server and forwards it to the
  * appropriate service.
+ * <p>
+ * Both the {@link #doRpc(Request, RpcCallback)} and
+ * {@link #doBlockingRpc(Request)} methods try to find a matching
+ * {@link BlockingService} first and a matching {@link Service} second.
  *
  * @author Shardul Deo
  */
@@ -65,12 +70,13 @@ class RpcForwarder {
   }
 
   /**
-   * Handle the RPC request by forwarding it to the correct service/method.
+   * Handle the blocking RPC request by forwarding it to the correct
+   * service/method.
    *
    * @throws RpcException If there was some error executing the RPC.
    */
-  public SocketRpcProtos.Response doRPC(SocketRpcProtos.Request rpcRequest)
-      throws RpcException {
+  public SocketRpcProtos.Response doBlockingRpc(
+      SocketRpcProtos.Request rpcRequest) throws RpcException {
     // Get the service, first try BlockingService
     BlockingService blockingService = blockingServiceMap.get(
         rpcRequest.getServiceName());
@@ -84,7 +90,52 @@ class RpcForwarder {
       throw new RpcException(ErrorReason.SERVICE_NOT_FOUND,
           "Could not find service: " + rpcRequest.getServiceName(), null);
     }
-    return forwardToService(rpcRequest, service);
+
+    // Call service using an instant callback
+    Callback<Message> callback = new Callback<Message>();
+    SocketRpcController socketController = new SocketRpcController();
+    forwardToService(rpcRequest, callback, service, socketController);
+
+    // Build and return response (callback invocation is optional)
+    return createRpcResponse(callback.response, callback.invoked,
+        socketController);
+  }
+
+  /**
+   * Handle the the non-blocking RPC request by forwarding it to the correct
+   * service/method.
+   *
+   * @throws RpcException If there was some error executing the RPC.
+   */
+  public void doRpc(SocketRpcProtos.Request rpcRequest,
+      final RpcCallback<SocketRpcProtos.Response> rpcCallback)
+      throws RpcException {
+
+    // Get the service, first try BlockingService
+    BlockingService blockingService = blockingServiceMap.get(
+        rpcRequest.getServiceName());
+    if (blockingService != null) {
+      Response response = forwardToBlockingService(rpcRequest, blockingService);
+      rpcCallback.run(response);
+      return;
+    }
+
+    // Now try Service
+    Service service = serviceMap.get(rpcRequest.getServiceName());
+    if (service == null) {
+      throw new RpcException(ErrorReason.SERVICE_NOT_FOUND,
+          "Could not find service: " + rpcRequest.getServiceName(), null);
+    }
+
+    // Call service using wrapper around rpcCallback
+    final SocketRpcController socketController = new SocketRpcController();
+    RpcCallback<Message> callback = new RpcCallback<Message>() {
+      @Override
+      public void run(Message response) {
+        rpcCallback.run(createRpcResponse(response, true, socketController));
+      }
+    };
+    forwardToService(rpcRequest, callback, service, socketController);
   }
 
   private Response forwardToBlockingService(Request rpcRequest,
@@ -111,8 +162,9 @@ class RpcForwarder {
     }
   }
 
-  private Response forwardToService(SocketRpcProtos.Request rpcRequest,
-      Service service) throws RpcException {
+  private void forwardToService(SocketRpcProtos.Request rpcRequest,
+      RpcCallback<Message> callback, Service service,
+      RpcController socketController) throws RpcException {
     // Get matching method
     MethodDescriptor method = getMethod(rpcRequest,
         service.getDescriptorForType());
@@ -122,20 +174,12 @@ class RpcForwarder {
         service.getRequestPrototype(method));
 
     // Call method
-    SocketRpcController socketController = new SocketRpcController();
-    Callback callback = new Callback();
     try {
-      // TODO: Make this truly async by calling the method in another thread so
-      // that the callback is async.
       service.callMethod(method, socketController, request, callback);
     } catch (RuntimeException e) {
       throw new RpcException(ErrorReason.RPC_ERROR,
           "Error running method " + method.getFullName(), e);
     }
-
-    // Build and return response (callback invocation is optional)
-    return createRpcResponse(callback.response, callback.invoked,
-        socketController);
   }
 
   /**
@@ -198,14 +242,22 @@ class RpcForwarder {
   /**
    * Callback that just saves the response and the fact that it was invoked.
    */
-  private static class Callback implements RpcCallback<Message> {
+  static class Callback<T extends Message> implements RpcCallback<T> {
 
-    private Message response;
+    private T response = null;
     private boolean invoked = false;
 
-    public void run(Message response) {
+    public void run(T response) {
       this.response = response;
       invoked = true;
+    }
+
+    public T getResponse() {
+      return response;
+    }
+
+    public boolean isInvoked() {
+      return invoked;
     }
   }
 

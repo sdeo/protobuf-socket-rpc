@@ -84,4 +84,12 @@ public class SocketRpcController implements RpcController {
     throw new UnsupportedOperationException(
         "Cannot cancel request in Socket RPC");
   }
+
+  @Override
+  public String toString() {
+    return new StringBuffer("SocketRpcController:")
+        .append("\nFailed: " + failed)
+        .append("\nError: " + error)
+        .append("\nReason: " + reason).toString();
+  }
 }

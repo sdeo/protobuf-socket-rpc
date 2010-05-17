@@ -20,6 +20,8 @@
 
 package com.googlecode.protobuf.socketrpc;
 
+import junit.framework.Assert;
+
 import com.google.protobuf.BlockingService;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
@@ -36,10 +38,15 @@ import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
 public class FakeServiceImpl extends TestService implements
     TestService.BlockingInterface {
 
+  private final Request expectedRequest;;
   private String error = null;
   private RuntimeException rex = null;
   private boolean invokeCallback = false;
   private Response response = null;
+
+  public FakeServiceImpl(Request expectedRequest) {
+    this.expectedRequest = expectedRequest;
+  }
 
   public FakeServiceImpl failsWithError(String error) {
     this.error = error;
@@ -57,8 +64,10 @@ public class FakeServiceImpl extends TestService implements
     return this;
   }
 
+  @Override
   public void testMethod(RpcController controller, Request request,
-      RpcCallback<Response> done) {
+      final RpcCallback<Response> done) {
+    Assert.assertEquals(expectedRequest, request);
     if (error != null) {
       controller.setFailed(error);
     }
@@ -74,6 +83,7 @@ public class FakeServiceImpl extends TestService implements
   @Override
   public Response testMethod(RpcController controller, Request request)
       throws ServiceException {
+    Assert.assertEquals(expectedRequest, request);
     if (error != null) {
       controller.setFailed(error);
       throw new ServiceException(error);

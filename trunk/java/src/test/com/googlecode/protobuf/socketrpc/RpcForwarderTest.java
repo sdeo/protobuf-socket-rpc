@@ -23,6 +23,7 @@ package com.googlecode.protobuf.socketrpc;
 import junit.framework.TestCase;
 
 import com.google.protobuf.ByteString;
+import com.googlecode.protobuf.socketrpc.RpcForwarder.Callback;
 import com.googlecode.protobuf.socketrpc.RpcForwarder.RpcException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
@@ -35,6 +36,16 @@ import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
  * @author Shardul Deo
  */
 public class RpcForwarderTest extends TestCase {
+
+  private static final Request REQUEST;
+  private static final SocketRpcProtos.Request RPC_REQUEST;
+
+  static {
+    REQUEST = Request.newBuilder().setStrData("Request Data").build();
+    RPC_REQUEST = createRpcRequest(TestService.getDescriptor().getFullName(),
+        TestService.getDescriptor().getMethods().get(0).getName(),
+        REQUEST.toByteString());
+  }
 
   private RpcForwarder rpcForwarder;
 
@@ -49,27 +60,43 @@ public class RpcForwarderTest extends TestCase {
    */
   public void testGoodRpc() throws RpcException {
     // Create data
-    String reqdata = "Request Data";
-    String resdata = "Response Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
-    Response response = Response.newBuilder().setStrData(resdata).build();
+    Response response = Response.newBuilder().setStrData("Response Data")
+        .build();
 
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl().withResponse(response));
+    // Register Service
+    rpcForwarder.registerService(new FakeServiceImpl(REQUEST)
+        .withResponse(response));
+
+    // Test doBlockingRpc
     SocketRpcProtos.Response rpcResponse =
-        rpcForwarder.doRPC(createRpcRequest(request));
-
-    // Verify result
+        rpcForwarder.doBlockingRpc(RPC_REQUEST);
     assertTrue(rpcResponse.getCallback());
     assertEquals(response.toByteString(), rpcResponse.getResponseProto());
 
-    // Try with blocking service
-    response = Response.newBuilder().setStrData("New Data").build();
-    rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().withResponse(response).toBlockingService());
-    rpcResponse = rpcForwarder.doRPC(createRpcRequest(request));
+    // Test doRpc
+    Callback<SocketRpcProtos.Response> rpcCallback =
+        new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertTrue(rpcCallback.isInvoked());
+    rpcResponse = rpcCallback.getResponse();
+    assertTrue(rpcResponse.getCallback());
+    assertEquals(response.toByteString(), rpcResponse.getResponseProto());
 
-    // Verify result
+    // Register BlockingService
+    response = Response.newBuilder().setStrData("New Data").build();
+    rpcForwarder.registerBlockingService(new FakeServiceImpl(REQUEST)
+        .withResponse(response).toBlockingService());
+
+    // Test doBlockingRpc
+    rpcResponse = rpcForwarder.doBlockingRpc(RPC_REQUEST);
+    assertTrue(rpcResponse.getCallback());
+    assertEquals(response.toByteString(), rpcResponse.getResponseProto());
+
+    // Test doRpc
+    rpcCallback = new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertTrue(rpcCallback.isInvoked());
+    rpcResponse = rpcCallback.getResponse();
     assertTrue(rpcResponse.getCallback());
     assertEquals(response.toByteString(), rpcResponse.getResponseProto());
   }
@@ -78,25 +105,35 @@ public class RpcForwarderTest extends TestCase {
    * Successful RPC but callback is not called.
    */
   public void testNoCallback() throws RpcException {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
+    // Register Service
+    rpcForwarder.registerService(new FakeServiceImpl(REQUEST));
 
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl());
+    // Test doBlockingRpc
     SocketRpcProtos.Response rpcResponse =
-        rpcForwarder.doRPC(createRpcRequest(request));
-
-    // Verify result
+        rpcForwarder.doBlockingRpc(RPC_REQUEST);
     assertFalse(rpcResponse.getCallback());
     assertFalse(rpcResponse.hasResponseProto());
 
-    // Try with blocking service
-    rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().toBlockingService());
-    rpcResponse = rpcForwarder.doRPC(createRpcRequest(request));
+    // Test doRpc
+    Callback<SocketRpcProtos.Response> rpcCallback =
+        new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertFalse(rpcCallback.isInvoked());
 
-    // Verify result
+    // Register BlockingService
+    rpcForwarder.registerBlockingService(
+        new FakeServiceImpl(REQUEST).toBlockingService());
+
+    // Test doBlockingRpc
+    rpcResponse = rpcForwarder.doBlockingRpc(RPC_REQUEST);
+    assertTrue(rpcResponse.getCallback());
+    assertFalse(rpcResponse.hasResponseProto());
+
+    // Test doRpc
+    rpcCallback = new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertTrue(rpcCallback.isInvoked());
+    rpcResponse = rpcCallback.getResponse();
     assertTrue(rpcResponse.getCallback());
     assertFalse(rpcResponse.hasResponseProto());
   }
@@ -105,25 +142,39 @@ public class RpcForwarderTest extends TestCase {
    * Successful RPC but callback is called with null.
    */
   public void testNullCallBack() throws RpcException {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
+    // Register Service
+    rpcForwarder.registerService(
+        new FakeServiceImpl(REQUEST).withResponse(null));
 
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl().withResponse(null));
+    // Test doBlockingRpc
     SocketRpcProtos.Response rpcResponse =
-        rpcForwarder.doRPC(createRpcRequest(request));
-
-    // Verify result
+        rpcForwarder.doBlockingRpc(RPC_REQUEST);
     assertTrue(rpcResponse.getCallback());
     assertFalse(rpcResponse.hasResponseProto());
 
-    // Try with blocking service
-    rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().withResponse(null).toBlockingService());
-    rpcResponse = rpcForwarder.doRPC(createRpcRequest(request));
+    // Test doRpc
+    Callback<SocketRpcProtos.Response> rpcCallback =
+        new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertTrue(rpcCallback.isInvoked());
+    rpcResponse = rpcCallback.getResponse();
+    assertTrue(rpcResponse.getCallback());
+    assertFalse(rpcResponse.hasResponseProto());
 
-    // Verify result
+    // Register BlockingService
+    rpcForwarder.registerBlockingService(
+        new FakeServiceImpl(REQUEST).withResponse(null).toBlockingService());
+
+    // Test doBlockingRpc
+    rpcResponse = rpcForwarder.doBlockingRpc(RPC_REQUEST);
+    assertTrue(rpcResponse.getCallback());
+    assertFalse(rpcResponse.hasResponseProto());
+
+    // Test doRpc
+    rpcCallback = new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertTrue(rpcCallback.isInvoked());
+    rpcResponse = rpcCallback.getResponse();
     assertTrue(rpcResponse.getCallback());
     assertFalse(rpcResponse.hasResponseProto());
   }
@@ -132,17 +183,23 @@ public class RpcForwarderTest extends TestCase {
    * Server is called with RPC for unknown service.
    */
   public void testInvalidService() {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
-
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl());
+    rpcForwarder.registerService(new FakeServiceImpl(REQUEST));
     rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().toBlockingService());
+        new FakeServiceImpl(REQUEST).toBlockingService());
+
+    // Test doBlockingRpc
     try {
-      rpcForwarder.doRPC(
-          createRpcRequest("BadService", "", request.toByteString()));
+      rpcForwarder.doBlockingRpc(
+          createRpcRequest("BadService", "", REQUEST.toByteString()));
+      fail("Should have failed");
+    } catch (RpcException e) {
+      assertEquals(ErrorReason.SERVICE_NOT_FOUND, e.errorReason);
+    }
+
+    // Test doRpc
+    try {
+      rpcForwarder.doRpc(
+          createRpcRequest("BadService", "", REQUEST.toByteString()), null);
       fail("Should have failed");
     } catch (RpcException e) {
       assertEquals(ErrorReason.SERVICE_NOT_FOUND, e.errorReason);
@@ -153,24 +210,34 @@ public class RpcForwarderTest extends TestCase {
    * Server is called with RPC for unknown method.
    */
   public void testInvalidMethod() {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
+    // Register Service
+    rpcForwarder.registerService(new FakeServiceImpl(REQUEST));
+    assertInvalidMethodFails();
 
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl());
-    assertInvalidMethodFails(request);
+    // Register BlockingService
     rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().toBlockingService());
-    assertInvalidMethodFails(request);
+        new FakeServiceImpl(REQUEST).toBlockingService());
+    assertInvalidMethodFails();
   }
 
-  private void assertInvalidMethodFails(Request request) {
+  private void assertInvalidMethodFails() {
+    // Test doBlockingRpc
     try {
-      rpcForwarder.doRPC(createRpcRequest(
+      rpcForwarder.doBlockingRpc(createRpcRequest(
           TestService.getDescriptor().getFullName(),
           "BadMethod",
-          request.toByteString()));
+          REQUEST.toByteString()));
+      fail("Should have failed");
+    } catch (RpcException e) {
+      assertEquals(ErrorReason.METHOD_NOT_FOUND, e.errorReason);
+    }
+
+    // Test doRpc
+    try {
+      rpcForwarder.doRpc(createRpcRequest(
+          TestService.getDescriptor().getFullName(),
+          "BadMethod",
+          REQUEST.toByteString()), null);
       fail("Should have failed");
     } catch (RpcException e) {
       assertEquals(ErrorReason.METHOD_NOT_FOUND, e.errorReason);
@@ -181,20 +248,34 @@ public class RpcForwarderTest extends TestCase {
    * RPC Request proto is invalid.
    */
   public void testInvalidRequestProto() {
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl());
+    // Register Service
+    rpcForwarder.registerService(new FakeServiceImpl(null));
     assertBadRequestProtoFails();
+
+    // Register BlockingService
     rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().toBlockingService());
+        new FakeServiceImpl(null).toBlockingService());
     assertBadRequestProtoFails();
   }
 
   private void assertBadRequestProtoFails() {
+    // Test doBlockingRpc
     try {
-      rpcForwarder.doRPC(createRpcRequest(
+      rpcForwarder.doBlockingRpc(createRpcRequest(
           TestService.getDescriptor().getFullName(),
           TestService.getDescriptor().getMethods().get(0).getName(),
           ByteString.copyFrom("Bad Request".getBytes())));
+      fail("Should have failed");
+    } catch (RpcException e) {
+      assertEquals(ErrorReason.BAD_REQUEST_PROTO, e.errorReason);
+    }
+
+    // Test doRpc
+    try {
+      rpcForwarder.doRpc(createRpcRequest(
+          TestService.getDescriptor().getFullName(),
+          TestService.getDescriptor().getMethods().get(0).getName(),
+          ByteString.copyFrom("Bad Request".getBytes())), null);
       fail("Should have failed");
     } catch (RpcException e) {
       assertEquals(ErrorReason.BAD_REQUEST_PROTO, e.errorReason);
@@ -205,24 +286,32 @@ public class RpcForwarderTest extends TestCase {
    * RPC throws exception.
    */
   public void testRpcException() {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
-
-    // Call forwarder
+    // Register Service
     RuntimeException error = new RuntimeException();
     rpcForwarder.registerService(
-        new FakeServiceImpl().throwsException(error));
-    assertRpcErrorFails(request, error);
+        new FakeServiceImpl(REQUEST).throwsException(error));
+    assertRpcErrorFails(error);
+
+    // Register BlockingService
     error = new RuntimeException();
     rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().throwsException(error).toBlockingService());
-    assertRpcErrorFails(request, error);
+        new FakeServiceImpl(REQUEST).throwsException(error).toBlockingService());
+    assertRpcErrorFails(error);
   }
 
-  private void assertRpcErrorFails(Request request, RuntimeException error) {
+  private void assertRpcErrorFails(RuntimeException error) {
+    // Test doBlockingRpc
     try {
-      rpcForwarder.doRPC(createRpcRequest(request));
+      rpcForwarder.doBlockingRpc(RPC_REQUEST);
+      fail("Should have failed");
+    } catch (RpcException e) {
+      assertEquals(ErrorReason.RPC_ERROR, e.errorReason);
+      assertSame(error, e.getCause());
+    }
+
+    // Test doRpc
+    try {
+      rpcForwarder.doRpc(RPC_REQUEST, null);
       fail("Should have failed");
     } catch (RpcException e) {
       assertEquals(ErrorReason.RPC_ERROR, e.errorReason);
@@ -234,38 +323,45 @@ public class RpcForwarderTest extends TestCase {
    * RPC fails.
    */
   public void testRPCFailed() throws RpcException {
-    // Create data
-    String reqdata = "Request Data";
-    Request request = Request.newBuilder().setStrData(reqdata).build();
+    // Register Service
+    rpcForwarder.registerService(
+        new FakeServiceImpl(REQUEST).failsWithError("Error"));
 
-    // Call forwarder
-    rpcForwarder.registerService(new FakeServiceImpl().failsWithError("Error"));
+    // Test doBlockingRpc
     SocketRpcProtos.Response rpcResponse =
-        rpcForwarder.doRPC(createRpcRequest(request));
-
-    // Verify result
+        rpcForwarder.doBlockingRpc(RPC_REQUEST);
     assertFalse(rpcResponse.getCallback());
     assertEquals("Error", rpcResponse.getError());
     assertEquals(ErrorReason.RPC_FAILED, rpcResponse.getErrorReason());
 
-    // Call forwarder
-    rpcForwarder.registerBlockingService(
-        new FakeServiceImpl().failsWithError("New Error").toBlockingService());
+    // Test doRpc
+    Callback<SocketRpcProtos.Response> rpcCallback =
+        new Callback<SocketRpcProtos.Response>();
+    rpcForwarder.doRpc(RPC_REQUEST, rpcCallback);
+    assertFalse(rpcCallback.isInvoked());
+
+    // Register BlockingService
+    rpcForwarder.registerBlockingService(new FakeServiceImpl(REQUEST)
+        .failsWithError("New Error").toBlockingService());
+
+    // Test doBlockingRpc
     try {
-      rpcForwarder.doRPC(createRpcRequest(request));
+      rpcForwarder.doBlockingRpc(RPC_REQUEST);
+    } catch (RpcException e) {
+      assertEquals(ErrorReason.RPC_FAILED, e.errorReason);
+      assertEquals("New Error", e.getMessage());
+    }
+
+    // Test doRpc
+    try {
+      rpcForwarder.doRpc(RPC_REQUEST, null);
     } catch (RpcException e) {
       assertEquals(ErrorReason.RPC_FAILED, e.errorReason);
       assertEquals("New Error", e.getMessage());
     }
   }
 
-  private SocketRpcProtos.Request createRpcRequest(Request request) {
-    return createRpcRequest(TestService.getDescriptor().getFullName(),
-        TestService.getDescriptor().getMethods().get(0).getName(),
-        request.toByteString());
-  }
-
-  private SocketRpcProtos.Request createRpcRequest(String service,
+  private static SocketRpcProtos.Request createRpcRequest(String service,
       String method, ByteString request) {
     return SocketRpcProtos.Request.newBuilder()
         .setServiceName(service)
