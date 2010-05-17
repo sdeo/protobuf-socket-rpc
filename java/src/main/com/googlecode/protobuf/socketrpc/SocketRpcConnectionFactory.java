@@ -20,20 +20,15 @@
 
 package com.googlecode.protobuf.socketrpc;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 
 import javax.net.SocketFactory;
 
-import com.google.protobuf.MessageLite;
-import com.google.protobuf.MessageLite.Builder;
 
 /**
- * {@link RpcConnectionFactory} that creates a new socket for every rpc.
+ * Client-side {@link RpcConnectionFactory} that creates a new socket for every
+ * RPC.
  *
  * @author Shardul Deo
  */
@@ -65,52 +60,5 @@ public class SocketRpcConnectionFactory implements RpcConnectionFactory {
     // Open socket
     Socket socket = socketFactory.createSocket(host, port);
     return new SocketConnection(socket);
-  }
-
-  /**
-   * {@link Connection} impl that wraps a {@link Socket}.
-   */
-  private static class SocketConnection implements Connection {
-
-    private final Socket socket;
-    private final OutputStream out;
-    private final InputStream in;
-
-    private SocketConnection(Socket socket) throws IOException {
-      this.socket = socket;
-
-      // Create input/output streams
-      try {
-        out = new BufferedOutputStream(socket.getOutputStream());
-        in = new BufferedInputStream(socket.getInputStream());
-      } catch (IOException e) {
-        // Cleanup and rethrow
-        try {
-          socket.close();
-        } catch (IOException ioe) {
-          // It's ok
-        }
-        throw e;
-      }
-    }
-
-    @Override
-    public void sendProtoMessage(MessageLite message) throws IOException {
-      // Write message
-      message.writeTo(out);
-      out.flush();
-      socket.shutdownOutput();
-    }
-
-    @Override
-    public void receiveProtoMessage(Builder messageBuilder) throws IOException {
-      // Read message
-      messageBuilder.mergeFrom(in);
-    }
-
-    @Override
-    public void close() throws IOException {
-      socket.close();
-    }
   }
 }

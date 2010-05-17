@@ -53,6 +53,7 @@ public class FakeSocketFactory extends SocketFactory {
     return this;
   }
 
+  @Override
   public Socket createSocket() throws IOException {
     if (unknownHostException != null) {
       throw unknownHostException;
@@ -63,20 +64,24 @@ public class FakeSocketFactory extends SocketFactory {
     return socket;
   }
 
+  @Override
   public Socket createSocket(String host, int port) throws IOException,
       UnknownHostException {
     return createSocket();
   }
 
+  @Override
   public Socket createSocket(InetAddress host, int port) throws IOException {
     return createSocket();
   }
 
+  @Override
   public Socket createSocket(String host, int port, InetAddress localHost,
       int localPort) throws IOException, UnknownHostException {
     return createSocket();
   }
 
+  @Override
   public Socket createSocket(InetAddress address, int port,
       InetAddress localAddress, int localPort) throws IOException {
     return createSocket();
