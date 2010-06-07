@@ -22,12 +22,12 @@ package com.googlecode.protobuf.socketrpc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
 
@@ -38,20 +38,42 @@ import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
  */
 public class FakeSocket extends Socket {
 
+  private final boolean delimited;
+
+  public FakeSocket(boolean delimited) {
+    this.delimited = delimited;
+  }
+
   private ByteArrayInputStream input;
   private ByteArrayOutputStream output;
 
   // Methods used when the socket is used as a server socket
 
-  public FakeSocket withRequest(SocketRpcProtos.Request request) {
-    input = new ByteArrayInputStream(request.toByteArray());
+  private void setMessage(Message message)
+      throws IOException {
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    if (delimited) {
+      message.writeDelimitedTo(os);
+    } else {
+      message.writeTo(os);
+    }
+    input = new ByteArrayInputStream(os.toByteArray());
+  }
+
+  public FakeSocket withRequest(SocketRpcProtos.Request request)
+      throws IOException {
+    setMessage(request);
     return this;
   }
 
-  public SocketRpcProtos.Response getResponse()
-      throws InvalidProtocolBufferException {
-    return SocketRpcProtos.Response.newBuilder()
-        .mergeFrom(output.toByteArray()).build();
+  public SocketRpcProtos.Response getResponse() throws IOException {
+    ByteArrayInputStream is = new ByteArrayInputStream(output.toByteArray());
+    if (delimited) {
+      return SocketRpcProtos.Response.newBuilder().mergeDelimitedFrom(is)
+          .build();
+    } else {
+      return SocketRpcProtos.Response.newBuilder().mergeFrom(is).build();
+    }
   }
 
   // Methods that can be used for client or server socket
@@ -67,40 +89,44 @@ public class FakeSocket extends Socket {
 
   // Methods used when the socket is used as a client socket
 
-  public FakeSocket withNoResponse(boolean callback) {
+  public FakeSocket withNoResponse(boolean callback) throws IOException {
     SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
         .newBuilder().setCallback(callback).build();
-    input = new ByteArrayInputStream(rpcResponse.toByteArray());
+    setMessage(rpcResponse);
     return this;
   }
 
-  public FakeSocket withResponseProto(ByteString response) {
+  public FakeSocket withResponseProto(ByteString response) throws IOException {
     SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
         .newBuilder().setCallback(true).setResponseProto(response).build();
-    input = new ByteArrayInputStream(rpcResponse.toByteArray());
+    setMessage(rpcResponse);
     return this;
   }
 
-  public FakeSocket withResponseProto(Message message) {
+  public FakeSocket withResponseProto(Message message) throws IOException {
     SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
         .newBuilder().setCallback(true)
         .setResponseProto(message.toByteString()).build();
-    input = new ByteArrayInputStream(rpcResponse.toByteArray());
+    setMessage(rpcResponse);
     return this;
   }
 
   public FakeSocket withErrorResponseProto(String error,
-      ErrorReason reason) {
+      ErrorReason reason) throws IOException {
     SocketRpcProtos.Response rpcResponse = SocketRpcProtos.Response
         .newBuilder().setError(error).setErrorReason(reason).build();
-    input = new ByteArrayInputStream(rpcResponse.toByteArray());
+    setMessage(rpcResponse);
     return this;
   }
 
-  public SocketRpcProtos.Request getRequest()
-      throws InvalidProtocolBufferException {
-    return SocketRpcProtos.Request.newBuilder().mergeFrom(output.toByteArray())
-        .build();
+  public SocketRpcProtos.Request getRequest() throws IOException {
+    ByteArrayInputStream is = new ByteArrayInputStream(output.toByteArray());
+    if (delimited) {
+      return SocketRpcProtos.Request.newBuilder().mergeDelimitedFrom(is)
+          .build();
+    } else {
+      return SocketRpcProtos.Request.newBuilder().mergeFrom(is).build();
+    }
   }
 
   // Overriden methods

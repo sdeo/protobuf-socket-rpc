@@ -20,12 +20,12 @@
 
 package com.googlecode.protobuf.socketrpc;
 
+import java.io.IOException;
 import java.util.concurrent.Executor;
 
 import junit.framework.TestCase;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.ServiceException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
@@ -48,9 +48,9 @@ public class RpcChannelImplTest extends TestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    socket = new FakeSocket();
+    socket = new FakeSocket(true);
     connectionFactory = new SocketRpcConnectionFactory("host", 8080,
-        new FakeSocketFactory().returnsSocket(socket));
+        new FakeSocketFactory().returnsSocket(socket), true /* delimited */);
     rpcChannel = new RpcChannelImpl(connectionFactory,
         RpcChannels.SAME_THREAD_EXECUTOR);
   }
@@ -66,7 +66,7 @@ public class RpcChannelImplTest extends TestCase {
     }
   };
 
-  public void testGoodRpc() throws InvalidProtocolBufferException {
+  public void testGoodRpc() throws IOException {
     // Create data
     String reqdata = "Request Data";
     String resdata = "Response Data";
@@ -98,7 +98,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * Rpc called with incomplete request proto
    */
-  public void testIncompleteRequest() {
+  public void testIncompleteRequest() throws IOException {
     // Create data
     String resdata = "Response Data";
     Request request = Request.newBuilder().buildPartial(); // required missing
@@ -119,7 +119,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * RPC doesn't invoke callback.
    */
-  public void testNoCallBack() throws InvalidProtocolBufferException {
+  public void testNoCallBack() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -147,7 +147,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * RPC invokes callback with null.
    */
-  public void testNullCallBack() throws InvalidProtocolBufferException {
+  public void testNullCallBack() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -177,7 +177,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * Server responds with bad data
    */
-  public void testBadResponse() throws InvalidProtocolBufferException {
+  public void testBadResponse() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -201,7 +201,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * RPC responds with bad response proto
    */
-  public void testBadResponseProto() throws InvalidProtocolBufferException {
+  public void testBadResponseProto() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -225,7 +225,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * RPC responds with incomplete response.
    */
-  public void testIncompleteResponse() throws InvalidProtocolBufferException {
+  public void testIncompleteResponse() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -251,7 +251,7 @@ public class RpcChannelImplTest extends TestCase {
   /**
    * Error on server side.
    */
-  public void testErrorResponse() throws InvalidProtocolBufferException {
+  public void testErrorResponse() throws IOException {
     checkResponseWithError(ErrorReason.BAD_REQUEST_DATA);
     checkResponseWithError(ErrorReason.BAD_REQUEST_PROTO);
     checkResponseWithError(ErrorReason.SERVICE_NOT_FOUND);
@@ -260,8 +260,7 @@ public class RpcChannelImplTest extends TestCase {
     checkResponseWithError(ErrorReason.RPC_FAILED);
   }
 
-  private void checkResponseWithError(ErrorReason reason)
-      throws InvalidProtocolBufferException {
+  private void checkResponseWithError(ErrorReason reason) throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -355,8 +354,7 @@ public class RpcChannelImplTest extends TestCase {
     }
   }
 
-  private void verifyRequestToSocket(Request request)
-      throws InvalidProtocolBufferException {
+  private void verifyRequestToSocket(Request request) throws IOException {
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
         .getServiceName());

@@ -25,40 +25,42 @@ import java.net.Socket;
 
 import javax.net.SocketFactory;
 
-
 /**
  * Client-side {@link RpcConnectionFactory} that creates a new socket for every
- * RPC.
+ * RPC. Use {@link SocketRpcConnectionFactories} to create instances.
+ * <p>
+ * When used in delimited mode, a single {@link Connection} created by this
+ * factory can used for sending receiving multiple protocol buffers.
  *
  * @author Shardul Deo
  */
-public class SocketRpcConnectionFactory implements RpcConnectionFactory {
+class SocketRpcConnectionFactory implements RpcConnectionFactory {
 
   private final String host;
   private final int port;
   private final SocketFactory socketFactory;
+  private final boolean delimited;
 
   /**
    * Constructor to create sockets the given host/port.
    */
-  public SocketRpcConnectionFactory(String host, int port) {
-    this.host = host;
-    this.port = port;
-    this.socketFactory = SocketFactory.getDefault();
+  public SocketRpcConnectionFactory(String host, int port, boolean delimited) {
+    this(host, port, SocketFactory.getDefault(), delimited);
   }
 
   // Used for testing
   SocketRpcConnectionFactory(String host, int port,
-      SocketFactory socketFactory) {
+      SocketFactory socketFactory, boolean delimited) {
     this.host = host;
     this.port = port;
     this.socketFactory = socketFactory;
+    this.delimited = delimited;
   }
 
   @Override
   public Connection createConnection() throws IOException {
     // Open socket
     Socket socket = socketFactory.createSocket(host, port);
-    return new SocketConnection(socket);
+    return new SocketConnection(socket, delimited);
   }
 }

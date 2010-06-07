@@ -23,11 +23,9 @@ package com.googlecode.protobuf.socketrpc;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-
 import junit.framework.TestCase;
 
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.ServiceException;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
@@ -54,7 +52,7 @@ public class SocketRpcChannelTest extends TestCase {
     }
   };
 
-  public void testGoodRpc() throws InvalidProtocolBufferException {
+  public void testGoodRpc() throws IOException {
     // Create data
     String reqdata = "Request Data";
     String resdata = "Response Data";
@@ -62,7 +60,7 @@ public class SocketRpcChannelTest extends TestCase {
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
+    FakeSocket socket = new FakeSocket(false).withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -120,14 +118,14 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * Rpc called with incomplete request proto
    */
-  public void testIncompleteRequest() {
+  public void testIncompleteRequest() throws IOException {
     // Create data
     String resdata = "Response Data";
     Request request = Request.newBuilder().buildPartial(); // required missing
     Response response = Response.newBuilder().setStrData(resdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
+    FakeSocket socket = new FakeSocket(false).withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -142,13 +140,13 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * RPC doesn't invoke callback.
    */
-  public void testNoCallBack() throws InvalidProtocolBufferException {
+  public void testNoCallBack() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withNoResponse(false);
+    FakeSocket socket = new FakeSocket(false).withNoResponse(false);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -167,13 +165,13 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * RPC invokes callback with null.
    */
-  public void testNullCallBack() throws InvalidProtocolBufferException {
+  public void testNullCallBack() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withNoResponse(true);
+    FakeSocket socket = new FakeSocket(false).withNoResponse(true);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -193,13 +191,13 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * Server responds with bad data
    */
-  public void testBadResponse() throws InvalidProtocolBufferException {
+  public void testBadResponse() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket()
+    FakeSocket socket = new FakeSocket(false)
         .withInputBytes("bad response".getBytes());
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
@@ -216,13 +214,13 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * RPC responds with bad response proto
    */
-  public void testBadResponseProto() throws InvalidProtocolBufferException {
+  public void testBadResponseProto() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(ByteString
+    FakeSocket socket = new FakeSocket(false).withResponseProto(ByteString
         .copyFrom("bad response".getBytes()));
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
@@ -239,7 +237,7 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * RPC responds with incomplete response.
    */
-  public void testIncompleteResponse() throws InvalidProtocolBufferException {
+  public void testIncompleteResponse() throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
@@ -247,7 +245,7 @@ public class SocketRpcChannelTest extends TestCase {
     Response response = Response.newBuilder().setIntData(5).buildPartial();
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withResponseProto(response);
+    FakeSocket socket = new FakeSocket(false).withResponseProto(response);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -263,7 +261,7 @@ public class SocketRpcChannelTest extends TestCase {
   /**
    * Error on server side.
    */
-  public void testErrorResponse() throws InvalidProtocolBufferException {
+  public void testErrorResponse() throws IOException {
     checkResponseWithError(ErrorReason.BAD_REQUEST_DATA);
     checkResponseWithError(ErrorReason.BAD_REQUEST_PROTO);
     checkResponseWithError(ErrorReason.SERVICE_NOT_FOUND);
@@ -272,15 +270,15 @@ public class SocketRpcChannelTest extends TestCase {
     checkResponseWithError(ErrorReason.RPC_FAILED);
   }
 
-  private void checkResponseWithError(ErrorReason reason)
-      throws InvalidProtocolBufferException {
+  private void checkResponseWithError(ErrorReason reason) throws IOException {
     // Create data
     String reqdata = "Request Data";
     Request request = Request.newBuilder().setStrData(reqdata).build();
     String error = "Error String";
 
     // Create channel
-    FakeSocket socket = new FakeSocket().withErrorResponseProto(error, reason);
+    FakeSocket socket = new FakeSocket(false).withErrorResponseProto(error,
+        reason);
     SocketRpcChannel rpcChannel = new SocketRpcChannel("host", -1,
         new FakeSocketFactory().returnsSocket(socket));
 
@@ -326,7 +324,7 @@ public class SocketRpcChannelTest extends TestCase {
   }
 
   private void verifyRequestToSocket(Request request, FakeSocket socket)
-      throws InvalidProtocolBufferException {
+      throws IOException {
     assertEquals(request.toByteString(), socket.getRequest().getRequestProto());
     assertEquals(TestService.getDescriptor().getFullName(), socket.getRequest()
         .getServiceName());

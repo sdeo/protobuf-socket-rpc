@@ -64,7 +64,8 @@ public class SocketRpcServer extends RpcServer {
    */
 	public SocketRpcServer(int port, int backlog, InetAddress bindAddr,
 			ExecutorService executorService) {
-    super(new SocketServerRpcConnectionFactory(port, backlog, bindAddr),
-        executorService, true /* closeConnectionAfterInvokingService */);
+    super(new SocketServerRpcConnectionFactory(port, backlog, bindAddr,
+        false /* delimited */), executorService,
+        true /* closeConnectionAfterInvokingService */);
 	}
 }

@@ -20,10 +20,11 @@
 
 package com.googlecode.protobuf.socketrpc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import com.google.protobuf.ByteString;
 import com.googlecode.protobuf.socketrpc.RpcConnectionFactory.Connection;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request;
 import com.googlecode.protobuf.socketrpc.TestProtos.Request.Builder;
@@ -49,7 +50,7 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
     super.setUp();
     socketFactory = new FakeSocketFactory();
     connectionFactory = new SocketRpcConnectionFactory("host", 8080,
-        socketFactory);
+        socketFactory, true /* delimited */);
   }
 
   public void testCreateConnection_unknownHost() throws IOException {
@@ -78,13 +79,15 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
   }
 
   public void testConnectionOutputInput() throws IOException {
-    FakeSocket socket = new FakeSocket();
-    socket.withInputBytes(MESSAGE.toByteArray());
+    FakeSocket socket = new FakeSocket(true);
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    MESSAGE.writeDelimitedTo(os);
+    socket.withInputBytes(os.toByteArray());
     Connection connection = connectionForSocket(socket);
 
     connection.sendProtoMessage(MESSAGE);
-    assertEquals(MESSAGE.toByteString(),
-        ByteString.copyFrom(socket.getOutputBytes()));
+    ByteArrayInputStream is = new ByteArrayInputStream(socket.getOutputBytes());
+    assertEquals(MESSAGE, Request.newBuilder().mergeDelimitedFrom(is).build());
 
     Builder builder = Request.newBuilder();
     connection.receiveProtoMessage(builder);
@@ -92,8 +95,10 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
   }
 
   public void testConnectionInputOutput() throws IOException {
-    FakeSocket socket = new FakeSocket();
-    socket.withInputBytes(MESSAGE.toByteArray());
+    FakeSocket socket = new FakeSocket(true);
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    MESSAGE.writeDelimitedTo(os);
+    socket.withInputBytes(os.toByteArray());
     Connection connection = connectionForSocket(socket);
 
     Builder builder = Request.newBuilder();
@@ -101,7 +106,7 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
     assertEquals(MESSAGE, builder.build());
 
     connection.sendProtoMessage(MESSAGE);
-    assertEquals(MESSAGE.toByteString(),
-        ByteString.copyFrom(socket.getOutputBytes()));
+    ByteArrayInputStream is = new ByteArrayInputStream(socket.getOutputBytes());
+    assertEquals(MESSAGE, Request.newBuilder().mergeDelimitedFrom(is).build());
   }
 }
