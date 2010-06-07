@@ -27,12 +27,12 @@ import java.util.logging.Logger;
 
 /**
  * Implementation of {@link SocketServerRpcConnectionFactory} that uses
- * {@link ServerSocket} to receive/respond RPCs.
+ * {@link ServerSocket} to receive/respond RPCs. Use
+ * {@link SocketRpcConnectionFactories} to create instances.
  *
  * @author Shardul Deo
  */
-public class SocketServerRpcConnectionFactory implements
-    ServerRpcConnectionFactory {
+class SocketServerRpcConnectionFactory implements ServerRpcConnectionFactory {
 
   private static final Logger LOG =
       Logger.getLogger(SocketServerRpcConnectionFactory.class.getName());
@@ -40,14 +40,16 @@ public class SocketServerRpcConnectionFactory implements
   private final int port;
   private final int backlog;
   private final InetAddress bindAddr;
+  private final boolean delimited;
 
   private volatile ServerSocket serverSocket = null;
 
   /**
    * @param port Port that this server socket will be started on.
+   * @param delimited Use delimited communication mode.
    */
-  public SocketServerRpcConnectionFactory(int port) {
-    this(port, 0, null);
+  public SocketServerRpcConnectionFactory(int port, boolean delimited) {
+    this(port, 0, null, delimited);
   }
 
   /**
@@ -56,12 +58,14 @@ public class SocketServerRpcConnectionFactory implements
    *        backlog.
    * @param bindAddr the local InetAddress the server socket will bind to. A
    *        null value binds to any/all local IP addresses.
+   * @param delimited Use delimited communication mode.
    */
   public SocketServerRpcConnectionFactory(int port, int backlog,
-      InetAddress bindAddr) {
+      InetAddress bindAddr, boolean delimited) {
     this.port = port;
     this.backlog = backlog;
     this.bindAddr = bindAddr;
+    this.delimited = delimited;
   }
 
   @Override
@@ -72,7 +76,7 @@ public class SocketServerRpcConnectionFactory implements
       local = initServerSocket();
     }
     // Thread blocks here waiting for requests
-    return new SocketConnection(serverSocket.accept());
+    return new SocketConnection(serverSocket.accept(), delimited);
   }
 
   private synchronized ServerSocket initServerSocket() throws IOException {

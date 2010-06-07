@@ -39,9 +39,11 @@ class SocketConnection implements Connection {
   private final Socket socket;
   private final OutputStream out;
   private final InputStream in;
+  private final boolean delimited;
 
-  SocketConnection(Socket socket) throws IOException {
+  SocketConnection(Socket socket, boolean delimited) throws IOException {
     this.socket = socket;
+    this.delimited = delimited;
 
     // Create input/output streams
     try {
@@ -61,15 +63,24 @@ class SocketConnection implements Connection {
   @Override
   public void sendProtoMessage(MessageLite message) throws IOException {
     // Write message
-    message.writeTo(out);
-    out.flush();
-    socket.shutdownOutput();
+    if (delimited) {
+      message.writeDelimitedTo(out);
+      out.flush();
+    } else {
+      message.writeTo(out);
+      out.flush();
+      socket.shutdownOutput();
+    }
   }
 
   @Override
   public void receiveProtoMessage(Builder messageBuilder) throws IOException {
     // Read message
-    messageBuilder.mergeFrom(in);
+    if (delimited) {
+      messageBuilder.mergeDelimitedFrom(in);
+    } else {
+      messageBuilder.mergeFrom(in);
+    }
   }
 
   @Override

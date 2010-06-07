@@ -35,9 +35,9 @@ import com.google.protobuf.MessageLite;
 public interface RpcConnectionFactory {
 
   /**
-   * Create a connection over which an RPC can be performed. Note that only one
-   * RPC should be performed over the connection returned. i.e.
-   * {@link Connection#sendProtoMessage(MessageLite)} and
+   * Create a connection over which an RPC can be performed. Note that for some
+   * implementations, only one RPC should be performed over the connection
+   * returned. i.e. {@link Connection#sendProtoMessage(MessageLite)} and
    * {@link Connection#receiveProtoMessage(MessageLite.Builder)} can be called
    * just once.
    * <p>

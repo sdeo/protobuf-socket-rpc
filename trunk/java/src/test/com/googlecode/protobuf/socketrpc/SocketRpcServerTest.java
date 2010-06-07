@@ -59,7 +59,8 @@ public class SocketRpcServerTest extends TestCase {
   }
 
   private void runHandler(Socket socket) throws IOException {
-    socketRpcServer.new ConnectionHandler(new SocketConnection(socket)).run();
+    SocketConnection connection = new SocketConnection(socket, false);
+    socketRpcServer.new ConnectionHandler(connection).run();
   }
 
   /**
@@ -78,9 +79,9 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcLocalServer.registerService(
         new FakeServiceImpl(REQUEST).withResponse(response));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     socketRpcLocalServer.new ConnectionHandler(
-        new SocketConnection(socket)).run();
+        new SocketConnection(socket, false)).run();
 
     // Verify result
     assertTrue(socket.getResponse().getCallback());
@@ -99,7 +100,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(REQUEST).withResponse(response));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
@@ -114,7 +115,7 @@ public class SocketRpcServerTest extends TestCase {
   public void testNoCallback() throws Exception {
     // Call handler
     socketRpcServer.registerService(new FakeServiceImpl(REQUEST));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
@@ -128,7 +129,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(new FakeServiceImpl(REQUEST)
         .withResponse(null));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
@@ -142,7 +143,8 @@ public class SocketRpcServerTest extends TestCase {
   public void testBadRequest() throws Exception {
     // Call handler
     socketRpcServer.registerService(new FakeServiceImpl(null));
-    FakeSocket socket = new FakeSocket().withInputBytes("bad bytes".getBytes());
+    FakeSocket socket = new FakeSocket(false).withInputBytes(
+        "bad bytes".getBytes());
     runHandler(socket);
 
     // Verify result
@@ -163,7 +165,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(REQUEST).withResponse(response));
-    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
+    FakeSocket socket = new FakeSocket(false).withRequest(createRpcRequest(
         "BadService", "", REQUEST.toByteString()));
     runHandler(socket);
 
@@ -185,7 +187,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(REQUEST).withResponse(response));
-    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
+    FakeSocket socket = new FakeSocket(false).withRequest(createRpcRequest(
         TestService.getDescriptor().getFullName(), "BadMethod",
         REQUEST.toByteString()));
     runHandler(socket);
@@ -208,7 +210,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(null).withResponse(response));
-    FakeSocket socket = new FakeSocket().withRequest(createRpcRequest(
+    FakeSocket socket = new FakeSocket(false).withRequest(createRpcRequest(
         TestService.getDescriptor().getFullName(),
         TestService.getDescriptor().getMethods().get(0).getName(),
         ByteString.copyFrom("Bad Request".getBytes())));
@@ -228,7 +230,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(REQUEST).throwsException(new RuntimeException()));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
@@ -245,7 +247,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerService(
         new FakeServiceImpl(REQUEST).failsWithError("Error"));
-    FakeSocket socket = new FakeSocket().withRequest(RPC_REQUEST);
+    FakeSocket socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
@@ -257,7 +259,7 @@ public class SocketRpcServerTest extends TestCase {
     // Call handler
     socketRpcServer.registerBlockingService(new FakeServiceImpl(REQUEST)
         .failsWithError("New Error").toBlockingService());
-    socket = new FakeSocket().withRequest(RPC_REQUEST);
+    socket = new FakeSocket(false).withRequest(RPC_REQUEST);
     runHandler(socket);
 
     // Verify result
