@@ -178,10 +178,8 @@ class RpcService(object):
                 timeout = 100    
         end = time() + (timeout / 1000)
         
-        # Tight loop waiting for timeout or synch_callback to set done to True 
-        while time() < end and not result['done']:
-            if controller.failed():
-                raise Exception(controller.error())
+        # Wait for timeout or thread to exit indicating call has returned
+        rpc_thread.join(timeout)
         
         if time() >= end and not result['done']:
             raise RpcError('request timed out')
