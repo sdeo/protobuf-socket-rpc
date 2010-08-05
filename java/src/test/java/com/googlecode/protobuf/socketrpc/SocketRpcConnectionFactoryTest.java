@@ -87,7 +87,7 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
 
     connection.sendProtoMessage(MESSAGE);
     ByteArrayInputStream is = new ByteArrayInputStream(socket.getOutputBytes());
-    assertEquals(MESSAGE, Request.newBuilder().mergeDelimitedFrom(is).build());
+    assertEquals(MESSAGE, Request.parseDelimitedFrom(is));
 
     Builder builder = Request.newBuilder();
     connection.receiveProtoMessage(builder);
@@ -107,6 +107,6 @@ public class SocketRpcConnectionFactoryTest extends TestCase {
 
     connection.sendProtoMessage(MESSAGE);
     ByteArrayInputStream is = new ByteArrayInputStream(socket.getOutputBytes());
-    assertEquals(MESSAGE, Request.newBuilder().mergeDelimitedFrom(is).build());
+    assertEquals(MESSAGE, Request.parseDelimitedFrom(is));
   }
 }
