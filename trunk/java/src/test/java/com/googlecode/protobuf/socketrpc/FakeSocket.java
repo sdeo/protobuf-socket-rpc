@@ -30,6 +30,7 @@ import java.net.Socket;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
+import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request;
 
 /**
  * Fake {@link Socket} used for unit tests.
@@ -69,8 +70,7 @@ public class FakeSocket extends Socket {
   public SocketRpcProtos.Response getResponse() throws IOException {
     ByteArrayInputStream is = new ByteArrayInputStream(output.toByteArray());
     if (delimited) {
-      return SocketRpcProtos.Response.newBuilder().mergeDelimitedFrom(is)
-          .build();
+      return SocketRpcProtos.Response.parseDelimitedFrom(is);
     } else {
       return SocketRpcProtos.Response.newBuilder().mergeFrom(is).build();
     }
@@ -122,8 +122,7 @@ public class FakeSocket extends Socket {
   public SocketRpcProtos.Request getRequest() throws IOException {
     ByteArrayInputStream is = new ByteArrayInputStream(output.toByteArray());
     if (delimited) {
-      return SocketRpcProtos.Request.newBuilder().mergeDelimitedFrom(is)
-          .build();
+      return SocketRpcProtos.Request.parseDelimitedFrom(is);
     } else {
       return SocketRpcProtos.Request.newBuilder().mergeFrom(is).build();
     }

@@ -142,7 +142,7 @@ public class SocketConnectionTest extends TestCase {
   private static Message readFromInputStream(ByteArrayInputStream is,
       boolean isDelimited) throws IOException {
     if (isDelimited) {
-      return Request.newBuilder().mergeDelimitedFrom(is).build();
+      return Request.parseDelimitedFrom(is);
     } else {
       return Request.newBuilder().mergeFrom(is).build();
     }
