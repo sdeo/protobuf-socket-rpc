@@ -1,13 +1,11 @@
-Version 1.3.2 (SVN Revision 87) 2010-11-04
+Version 1.x (SVN Trunk) YYYY-MM-DD
 
+* Add persistent connection support
 * Protobuf 2.3.0 compatible
 * Reorganized tree to match Maven conventions
 * Support more options to start the Server
 * SocketRpcChannel deprecated in favour of RpcChannelImpl
 * Fixed unit tests
-
-Version 1.3.1 (SVN Revision 46) 2009-12-21
-
 * Allow customization of server socket with backlog and bind inet addr
 
 Version 1.3 (SVN Revision 33) 2009-10-04
