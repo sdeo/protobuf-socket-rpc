@@ -105,6 +105,11 @@ public class RpcServerTest extends TestCase {
     public void close() {
       closed = true;
     }
+
+    @Override
+    public boolean isClosed() {
+      return closed;
+    }
   }
 
   private void runHandler(Connection connection) {

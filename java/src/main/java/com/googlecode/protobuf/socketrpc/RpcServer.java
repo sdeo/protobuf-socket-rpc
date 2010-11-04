@@ -153,15 +153,24 @@ public class RpcServer {
       LOG.info("Starting RPC server");
       try {
         running = true;
-        while (true) {
+        while (running) {
           // Thread blocks here waiting for requests
-          executor.execute(new ConnectionHandler(
-              rpcConnectionFactory.createConnection()));
+          Connection connection = rpcConnectionFactory.createConnection();
+          if (running && !executor.isShutdown()) {
+            if (connection.isClosed()) {
+              // Connection was closed, don't execute
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            } else {
+              executor.execute(new ConnectionHandler(connection));
+            }
+          }
         }
       } catch (IOException ex) {
-        if (!executor.isShutdown()) {
-          executor.shutdownNow();
-        }
+        stopServer();
       } finally {
         running = false;
       }
@@ -172,17 +181,16 @@ public class RpcServer {
     }
 
     private void stopServer() {
-      LOG.info("Shutting down RPC server");
-      if (!executor.isShutdown()) {
-        executor.shutdownNow();
-      }
       if (isRunning()) {
+        LOG.info("Shutting down RPC server");
+        running = false;
+        if (!executor.isShutdown()) {
+          executor.shutdownNow();
+        }
         try {
           rpcConnectionFactory.close();
         } catch (IOException e) {
           LOG.log(Level.WARNING, "Error while shutting down server", e);
-        } finally {
-          running = false;
         }
       }
     }
@@ -254,9 +262,14 @@ public class RpcServer {
 
     private void sendResponse(SocketRpcProtos.Response rpcResponse) {
       try {
+        if (connection.isClosed()) {
+          // Connection was closed for some reason
+          LOG.warning("Connection closed");
+          return;
+        }
         connection.sendProtoMessage(rpcResponse);
       } catch (IOException e) {
-        LOG.log(Level.WARNING, "Error while reading/writing", e);
+        LOG.log(Level.WARNING, "Error while writing", e);
       } finally {
         try {
           connection.close();

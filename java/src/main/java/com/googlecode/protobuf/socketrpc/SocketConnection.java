@@ -33,6 +33,8 @@ import com.googlecode.protobuf.socketrpc.RpcConnectionFactory.Connection;
 
 /**
  * {@link Connection} impl that wraps a {@link Socket}.
+ *
+ * @author Shardul Deo
  */
 class SocketConnection implements Connection {
 
@@ -64,8 +66,14 @@ class SocketConnection implements Connection {
   public void sendProtoMessage(MessageLite message) throws IOException {
     // Write message
     if (delimited) {
-      message.writeDelimitedTo(out);
-      out.flush();
+      try {
+        message.writeDelimitedTo(out);
+        out.flush();
+      } catch (IOException e) {
+        // Cannot write anymore, just close socket
+        socket.close();
+        throw e;
+      }
     } else {
       message.writeTo(out);
       out.flush();
@@ -88,5 +96,10 @@ class SocketConnection implements Connection {
     if (!socket.isClosed()) {
       socket.close();
     }
+  }
+
+  @Override
+  public boolean isClosed() {
+    return socket.isClosed();
   }
 }

@@ -30,7 +30,6 @@ import java.net.Socket;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.googlecode.protobuf.socketrpc.SocketRpcProtos.ErrorReason;
-import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request;
 
 /**
  * Fake {@link Socket} used for unit tests.
@@ -40,6 +39,7 @@ import com.googlecode.protobuf.socketrpc.SocketRpcProtos.Request;
 public class FakeSocket extends Socket {
 
   private final boolean delimited;
+  private boolean closed = false;
 
   public FakeSocket(boolean delimited) {
     this.delimited = delimited;
@@ -149,6 +149,11 @@ public class FakeSocket extends Socket {
 
   @Override
   public synchronized void close() {
-    // no-op
+    closed = true;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return closed;
   }
 }

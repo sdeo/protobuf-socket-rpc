@@ -25,6 +25,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.logging.Logger;
 
+import javax.net.ServerSocketFactory;
+
 /**
  * Implementation of {@link SocketServerRpcConnectionFactory} that uses
  * {@link ServerSocket} to receive/respond RPCs. Use
@@ -41,6 +43,7 @@ class SocketServerRpcConnectionFactory implements ServerRpcConnectionFactory {
   private final int backlog;
   private final InetAddress bindAddr;
   private final boolean delimited;
+  private final ServerSocketFactory socketFactory;
 
   private volatile ServerSocket serverSocket = null;
 
@@ -62,10 +65,18 @@ class SocketServerRpcConnectionFactory implements ServerRpcConnectionFactory {
    */
   public SocketServerRpcConnectionFactory(int port, int backlog,
       InetAddress bindAddr, boolean delimited) {
+    this(port, backlog, bindAddr, delimited, ServerSocketFactory.getDefault());
+  }
+
+  // Visible for testing
+  SocketServerRpcConnectionFactory(int port, int backlog,
+      InetAddress bindAddr, boolean delimited,
+      ServerSocketFactory socketFactory) {
     this.port = port;
     this.backlog = backlog;
     this.bindAddr = bindAddr;
     this.delimited = delimited;
+    this.socketFactory = socketFactory;
   }
 
   @Override
@@ -83,7 +94,8 @@ class SocketServerRpcConnectionFactory implements ServerRpcConnectionFactory {
     ServerSocket local = serverSocket;
     if (local == null) {
       LOG.info("Listening for requests on port: " + port);
-      serverSocket = local = new ServerSocket(port, backlog, bindAddr);
+      serverSocket = local = socketFactory.createServerSocket(port, backlog,
+          bindAddr);
     }
     return local;
   }
