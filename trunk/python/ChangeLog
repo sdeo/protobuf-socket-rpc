@@ -1,3 +1,7 @@
+Version 1.3.x (SVN Trunk) YYYY-MM-DD
+
+* ...
+
 Version 1.3.2 (SVN Revision 89) 2010-11-04
 
 * Use a more pythonic directory structure to allow better use of
