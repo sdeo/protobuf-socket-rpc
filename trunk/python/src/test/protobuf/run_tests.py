@@ -44,5 +44,5 @@ if __name__ == '__main__':
     suite.addTest(error_test.suite())
     suite.addTest(server_test.suite())
     suite.addTest(service_test.suite())
-    
+
     unittest.TextTestRunner(verbosity=0).run(suite)

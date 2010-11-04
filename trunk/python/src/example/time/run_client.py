@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Copyright (c) 2009 Las Cumbres Observatory (www.lcogt.net)
+# Copyright (c) 2010 Jan Dittberner
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,18 +19,21 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+'''
+run_client.py - An example client using the python socket
+implementation of the Google Protocol Buffers.
 
-'''run_client.py - An example client using the python socket implementation of
-the Google Protocol Buffers.
-
-This module is an executable script demonstrating the usage of the python socket
-implementation of the Google Protocol Buffers. To work correctly, the script
-requires a server to be running first (i.e. run_server.py).
+This module is an executable script demonstrating the usage of the
+python socket implementation of the Google Protocol Buffers. To work
+correctly, the script requires a server to be running first
+(i.e. run_server.py).
 
 Authors: Martin Norbury (mnorbury@lcogt.net)
          Eric Saunders (esaunders@lcogt.net)
          Zach Walker (zwalker@lcogt.net)
-May 2009
+         Jan Dittberner (jan@dittberner.info)
+
+May 2009, Nov 2010
 '''
 
 # Add main protobuf module to classpath
@@ -37,7 +41,7 @@ import sys
 sys.path.append('../../main')
 
 import time_pb2 as proto
-import protobuf
+from protobuf.socketrpc import RpcService
 
 import logging
 log = logging.getLogger(__name__)
@@ -45,15 +49,14 @@ hostname = 'localhost'
 port = 8090
 
 
-if __name__=='__main__':
-
+if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     log.debug("test")
-    
+
     # Create request message
     request = proto.TimeRequest()
-    
-    service = protobuf.RpcService(proto.TimeService_Stub, port, hostname)
+
+    service = RpcService(proto.TimeService_Stub, port, hostname)
     try:
         response = service.getTime(request, timeout=1000)
         log.info(response)

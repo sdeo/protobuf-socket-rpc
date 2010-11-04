@@ -23,7 +23,7 @@
 
 This module contains a convenience function for creating and retrieving a
 logger with a given name. In addition a Null handler is added to the logger
-to prevent client software not implementing the logging package from 
+to prevent client software not implementing the logging package from
 receiving "No handler" error messages.
 
 Authors: Martin Norbury (mnorbury@lcogt.net)
@@ -36,14 +36,13 @@ May 2009
 import logging
 
 
-
 class _NullHandler(logging.Handler):
     ''' NULL logging handler.
-    
-    A null logging handler to prevent clients that don't require the 
+
+    A null logging handler to prevent clients that don't require the
     logging package from reporting no handlers found.
     '''
-    
+
     def emit(self, record):
         ''' Override the emit function to do nothing. '''
         pass
