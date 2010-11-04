@@ -101,4 +101,35 @@
 			<version>2.3.0</version>
 		</dependency>
 	</dependencies>
+
+    <profiles>
+      <profile>
+        <id>source-build</id>
+        <activation>
+          <activeByDefault>false</activeByDefault>
+        </activation>
+        <build>
+          <plugins>
+            <plugin>
+              <artifactId>maven-assembly-plugin</artifactId>
+              <version>2.2</version>
+              <executions>
+                <execution>
+                  <id>build-source-archives</id>
+                  <phase>package</phase>
+                  <goals>
+                    <goal>single</goal>
+                  </goals>
+                  <configuration>
+                    <descriptorRefs>
+                      <descriptorRef>src</descriptorRef>
+                    </descriptorRefs>
+                  </configuration>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </build>
+      </profile>
+    </profiles>
 </project>

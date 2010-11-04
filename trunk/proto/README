@@ -1,0 +1,3 @@
+Changes to rpc.proto should be copied to python/src/protobuf/socketrpc
+and java/src/main/resources to allow building source tarballs that
+include sources for generated files.
