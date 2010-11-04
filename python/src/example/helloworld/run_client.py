@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Copyright (c) 2009 Las Cumbres Observatory (www.lcogt.net)
+# Copyright (c) 2010 Jan Dittberner
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,14 +19,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-'''run_client.py - A simple front-end to demo the RPC client implementation.
+'''
+run_client.py - A simple front-end to demo the RPC client implementation.
 
 Authors: Eric Saunders (esaunders@lcogt.net)
          Martin Norbury (mnorbury@lcogt.net)
          Zach Walker (zwalker@lcogt.net)
+         Jan Dittberner (jan@dittberner.info)
 
-May 2009
+May 2009, Nov 2010
 '''
 
 # Add main protobuf module to classpath
@@ -35,7 +37,7 @@ import traceback
 
 # Import required RPC modules
 import hello_world_pb2
-import protobuf
+from protobuf.socketrpc import RpcService
 
 # Configure logging
 import logging
@@ -44,7 +46,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Server details
 hostname = 'localhost'
-port     = 8090
+port = 8090
 
 
 # Create a request
@@ -52,14 +54,15 @@ request = hello_world_pb2.HelloRequest()
 request.my_name = 'Zach'
 
 # Create a new service instance
-service = protobuf.RpcService(hello_world_pb2.HelloWorldService_Stub,
-                              port,
-                              hostname)
+service = RpcService(hello_world_pb2.HelloWorldService_Stub,
+                     port,
+                     hostname)
 
-# Define a simple async callback
+
 def callback(request, response):
+    """Define a simple async callback."""
     log.info('Asynchronous response :' + response.__str__())
-    
+
 # Make an asynchronous call
 try:
     log.info('Making asynchronous call')
@@ -74,6 +77,3 @@ try:
     log.info('Synchronous response: ' + response.__str__())
 except Exception, ex:
     log.exception(ex)
-
-
-
