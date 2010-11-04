@@ -1,4 +1,4 @@
-Version 1.x (SVN trunk) YYYY-MM-DD
+Version 1.3.2 (SVN Revision 87) 2010-11-04
 
 * Use a more pythonic directory structure to allow better use of
   setuptools/distribute features
