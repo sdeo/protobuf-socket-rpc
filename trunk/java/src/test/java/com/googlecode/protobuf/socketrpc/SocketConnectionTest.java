@@ -56,6 +56,25 @@ public class SocketConnectionTest extends TestCase {
     undelimited = new FakeSocket(false);
   }
 
+  public void testClose_delimited() throws IOException {
+    doTestClose(delimited, true);
+  }
+
+  public void testClose_undelimited() throws IOException {
+    doTestClose(undelimited, false);
+  }
+
+  private void doTestClose(FakeSocket socket, boolean isDelimited) throws IOException {
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    writeToOutputStream(MESSAGE1, os, isDelimited);
+    socket.withInputBytes(os.toByteArray());
+
+    Connection connection = new SocketConnection(socket, isDelimited);
+    assertFalse(connection.isClosed());
+    connection.close();
+    assertTrue(connection.isClosed());
+  }
+
   public void testConnectionOutputInput_delimited() throws IOException {
     doTestOutputInput(delimited, true);
   }

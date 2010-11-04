@@ -41,7 +41,7 @@ public interface RpcConnectionFactory {
    * {@link Connection#receiveProtoMessage(MessageLite.Builder)} can be called
    * just once.
    * <p>
-   * In the case of a server side connection, this method might block the
+   * In the case of a server side connection, this method should block the
    * calling thread until a client makes a request.
    */
   Connection createConnection() throws UnknownHostException, IOException;
@@ -69,5 +69,12 @@ public interface RpcConnectionFactory {
      * be used after this method has been called.
      */
     void close() throws IOException;
+
+    /**
+     * Whether the connection is closed. This should be as accurate as possible
+     * so that clients/servers don't try to send/receive messages over this
+     * connection if it will fail.
+     */
+    boolean isClosed();
   }
 }
