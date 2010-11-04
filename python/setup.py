@@ -32,7 +32,7 @@ people who want a simple implementation of their protobuf rpc services.
 
 setup(
     name="protobuf.socketrpc",
-    version="1.3.2",
+    version="1.3.3",
     description="a Python implementation of protobuf RPC over sockets",
     long_description=DESCRIPTION,
     url='http://code.google.com/p/protobuf-socket-rpc/',
