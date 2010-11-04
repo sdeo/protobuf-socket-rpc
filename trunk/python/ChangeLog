@@ -1,0 +1,43 @@
+Version 1.x (SVN trunk) YYYY-MM-DD
+
+* Use a more pythonic directory structure to allow better use of
+  setuptools/distribute features
+* Add metadata to setup.py
+* Rename Python module from protobuf to protobuf.socketrpc to avoid
+  name clashes
+* Join thread instead of busy waiting for synchronous calls
+* Protobuf 2.3.0 compatible
+* Fixes for Issue 11 (Cannot create different server side handlers for
+  the same service) and Issue 12 (Exceptions on server not propogated
+  to client)
+* Fixed unit tests
+
+Version 1.3.1 (SVN Revision 46) 2009-12-21
+
+* Added Service class to make rpc calls cleaner and hide some of the
+  setup details
+
+Version 1.3 (SVN Revision 33) 2009-10-04
+
+* Protobuf 2.2.0 compatible and dependent.
+* Moving error reasons out of response message into its own top level
+  type in the proto. Added client side error reasons to the error
+  codes to be consistent.
+
+Version 1.2 (SVN Revision 12) 2009-02-14
+
+* Errors that occur on server side are not relayed back to
+  client. Client has new error reasons for them in the controller.
+* Client callback behavior is faithful replication of server callback
+  scenarios:
+  - Callback is called with good response.
+  - Callback is not called.
+  - Callback is called with null.
+  - Callback is called with empty protocol buffer.
+* Added comprehensive unit tests for client and server.
+
+Version 1.1 (SVN Revision 9) 2009-02-06
+
+* Added error handling. When errors occur, the client can find out
+  what error occurred from the controller.
+* Started adding unit tests.
