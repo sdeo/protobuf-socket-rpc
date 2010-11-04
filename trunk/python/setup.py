@@ -21,9 +21,31 @@
 
 from setuptools import setup, find_packages
 
+DESCRIPTION = """Google's protocol buffer library makes writing rpc services
+easy, but it does not contain a rpc implementation. The transport details are
+left up to the user to implement.
+
+This is a simple tcp/ip socket based rpc implementation in java and python for
+people who want a simple implementation of their protobuf rpc services.
+"""
+
 setup(
-      name = "protobuf_socket_rpc",
-      version = "1.3.2",
-      packages = find_packages('src/main'),
-      package_dir = {'':'src/main'},      
-      )
+    name="protobuf_socket_rpc",
+    version="1.3.2",
+    description="a Python implementation of protobuf RPC over sockets",
+    long_description=DESCRIPTION,
+    url='http://code.google.com/p/protobuf-socket-rpc/',
+    author='Shardul Deo',
+    author_email='shardul.deo@gmail.com',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: Software Development :: Libraries :: Python Modules'],
+    packages=find_packages('src/main'),
+    package_dir={'': 'src/main'},
+    # protobuf is not easy_install'able (yet) see
+    # http://code.google.com/p/protobuf/issues/detail?id=66
+    #install_requires=['protobuf>=2.2'],
+)
