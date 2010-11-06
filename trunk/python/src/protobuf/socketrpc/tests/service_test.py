@@ -32,7 +32,6 @@ Nov 2009, Nov 2010
 import unittest
 import sys
 import threading
-from time import sleep
 
 # Add protobuf module to path
 sys.path.append('../../main')
@@ -45,7 +44,6 @@ import protobuf.socketrpc.server as server
 import fake
 
 # Import the protoc generated test module
-import protobuf.socketrpc.rpc_pb2 as rpc_pb2
 import test_pb2
 
 success_port = 63636
@@ -161,62 +159,115 @@ class TestRpcService(unittest.TestCase):
         callback = Callback()
         callback.condition.acquire()
         try:
-            self.service.TestMethod(self.request, callback=callback)
-        except Exception, e:
-            self.assert_(False, 'Caught an unexpected exception %s' % e)
+            controller = self.service.TestMethod(self.request,
+                                                 callback=callback)
+        except RpcError, e:
+            self.fail('Caught an unexpected exception %s' % e)
 
         callback.condition.wait(2.0)
-        self.assertEquals(True, callback.called,
-                          'Asynch callback was not called')
+        self.assertTrue(callback.called, 'Asynch callback was not called')
+        self.assertTrue(callback.response is not None, 
+                        'Callback response was None');
+        self.assertFalse(controller.failed())
 
-        # Cannot compare response to None because of bug in protobuf
-        # msg compare code
-        self.assert_(
-            type(callback.response) != None.__class__,
-            'Callback response was None')
+    def test_call_asynch_fail_callback_object(self):
+        '''Test an asynchronous callback object'''
+        callback = Callback()
+        callback.condition.acquire()
+        try:
+            controller = self.fail_service.TestMethod(self.request, 
+                                                      callback=callback)
+        except RpcError, e:
+            self.fail('Caught an unexpected exception %s' % e)
+
+        callback.condition.wait(2.0)
+        self.assertTrue(callback.called, 'Asynch callback was not called')
+        self.assertTrue(callback.response is None, 
+                        'Callback response was not None');
+        self.assertTrue(controller.failed())
 
     def test_call_asynch_callback_method(self):
         '''Test an asynchronous callback method'''
         TestRpcService.callback_method_condition.acquire()
         try:
-            self.service.TestMethod(
+            controller = self.service.TestMethod(
                 self.request, callback=TestRpcService.callback)
-        except Exception, e:
+        except RpcError, e:
             self.fail('Caught an unexpected exception %s' % e)
 
         TestRpcService.callback_method_condition.wait(2.0)
-        self.assertEquals(
-            True, TestRpcService.callback_method_called,
-            'Asynch callback was not called')
+        self.assertTrue(TestRpcService.callback_method_called,
+                        'Asynch callback was not called')
 
         self.assertEquals(
             self.request, TestRpcService.callback_method_request,
             'Asynch callback request arg not equal to request')
+        self.assertTrue(TestRpcService.callback_method_response is not None,
+                        'Callback response was None')
+        self.assertFalse(controller.failed())
 
-        # Cannot compare reponse to None because of bug in protobuf
-        # msg compare code
-        self.assert_(
-            type(TestRpcService.callback_method_response) != None.__class__,
-            'Callback response was None')
 
-    def test_call_synch(self):
+    def test_call_asynch_fail_callback_method(self):
+        '''Test an asynchronous callback method'''
+        TestRpcService.callback_method_condition.acquire()
+        try:
+            controller = self.fail_service.TestMethod(
+                self.request, callback=TestRpcService.callback)
+        except RpcError, e:
+            self.fail('Caught an unexpected exception %s' % e)
+
+        TestRpcService.callback_method_condition.wait(2.0)
+        self.assertTrue(TestRpcService.callback_method_called,
+                        'Asynch callback was not called')
+
+        self.assertEquals(
+            self.request, TestRpcService.callback_method_request,
+            'Asynch callback request arg not equal to request')
+        self.assertTrue(TestRpcService.callback_method_response is None,
+                        'Callback response was not None')
+        self.assertTrue(controller.failed())
+
+
+    def test_call_synch_without_timeout(self):
+        '''Test a synchronous call'''
+
+        try:
+            response = self.service.TestMethod(self.request)
+        except Exception, e:
+            self.fail('Caught an unexpected exception %s' % e)
+        self.assertTrue(response is not None, 'Callback response was None');
+
+
+    def test_call_synch_with_timeout(self):
         '''Test a synchronous call'''
 
         try:
             response = self.service.TestMethod(self.request, timeout=1000)
-        except Exception, e:
+        except RpcError, e:
             self.fail('Caught an unexpected exception %s' % e)
-        self.assertNotEqual(type(response) != None.__class__,
-                            'Callback response was None')
+        self.assertTrue(response is not None, 'Callback response was None');
 
-    def test_call_synch_fail(self):
+
+    def test_call_synch_fail_without_timeout(self):
+        '''Test a synchronous call'''
+        self.assertRaises(
+            Exception, self.fail_service.TestMethod, (self.request))
+        try:
+            self.fail_service.TestMethod(self.request)
+            self.fail('Should have thrown exception')
+        except RpcError, e:
+            self.assertEqual(e.message, "YOU FAIL!")
+
+
+    def test_call_synch_fail_with_timeout(self):
         '''Test a synchronous call'''
         self.assertRaises(
             Exception, self.fail_service.TestMethod, (self.request),
             {'timeout': 1000})
         try:
-            reponse = self.fail_service.TestMethod(self.request, timeout=1000)
-        except Exception, e:
+            self.fail_service.TestMethod(self.request, timeout=1000)
+            self.fail('Should have thrown exception')
+        except RpcError, e:
             self.assertEqual(e.message, "YOU FAIL!")
 
 

@@ -33,7 +33,6 @@ import sys
 sys.path.append('../../main')
 
 # Import required RPC modules
-import hello_world_pb2
 import protobuf.socketrpc.server as server
 import HelloWorldServiceImpl as impl
 

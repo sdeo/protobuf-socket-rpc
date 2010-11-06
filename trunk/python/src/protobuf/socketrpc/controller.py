@@ -36,9 +36,6 @@ May 2009, Nov 2010
 # Third-party imports
 import google.protobuf.service as service
 
-# Module imports
-from protobuf.socketrpc import logger
-
 
 class SocketRpcController(service.RpcController):
     ''' RpcController implementation to be used by the SocketRpcChannel class.

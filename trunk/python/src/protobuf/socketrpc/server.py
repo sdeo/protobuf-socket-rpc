@@ -40,9 +40,7 @@ May 2009, Nov 2010
 
 # Standard library imports
 import SocketServer
-import threading
 import logging
-import socket
 
 # Third-party imports
 
@@ -95,7 +93,6 @@ class SocketHandler(SocketServer.StreamRequestHandler):
 
         # Send reply to client
         self.wfile.write(rpcResponse.SerializeToString())
-        self.request.shutdown(socket.SHUT_RDWR)
 
     def validateAndExecuteRequest(self, input):
         '''Match a client request to the corresponding service and method on

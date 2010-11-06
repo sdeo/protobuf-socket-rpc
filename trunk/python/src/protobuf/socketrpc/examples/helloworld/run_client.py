@@ -33,7 +33,6 @@ May 2009, Nov 2010
 # Add main protobuf module to classpath
 import sys
 sys.path.append('../../main')
-import traceback
 
 # Import required RPC modules
 import hello_world_pb2

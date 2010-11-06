@@ -37,7 +37,7 @@ setup(
     long_description=DESCRIPTION,
     url='http://code.google.com/p/protobuf-socket-rpc/',
     author='Shardul Deo',
-    author_email='shardul.deo@gmail.com',
+    author_email='sdeo.code@gmail.com',
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -49,6 +49,6 @@ setup(
     package_dir={'': 'src'},
     # protobuf is not easy_install'able (yet) see
     # http://code.google.com/p/protobuf/issues/detail?id=66
-    #install_requires=['protobuf>=2.2'],
+    #install_requires=['protobuf>=2.3'],
     test_suite='protobuf.socketrpc.tests',
 )

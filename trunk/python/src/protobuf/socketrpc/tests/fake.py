@@ -31,7 +31,6 @@ May 2009, Nov 2010
 
 # Standard library imports
 import socket
-import traceback
 
 # Module imports
 import protobuf.socketrpc.channel as ch
@@ -55,9 +54,6 @@ class TestServiceImpl(test_pb2.TestService):
         # Raise an exception if one has been passed in
         if self.exception:
             raise self.exception
-
-        # Extract request message contents
-        str_data = request.str_data
 
         # Create a reply
         response = test_pb2.Response()
