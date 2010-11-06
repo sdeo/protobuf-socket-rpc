@@ -148,6 +148,14 @@ class RpcService(object):
         Accepted Arguments:
         timeout -- (Integer) ms to wait for a response before returning
         '''
+
+        # Create a controller for this call
+        controller = self.channel.newController()
+        
+        if callback is None and timeout is None:
+            # Sync call without timeout
+            return rpc(self.service, controller, request, callback)
+
         # Define local callback function to handle RPC response
         # and initialize result dict
         result = {'done': False, 'response': None}
@@ -174,20 +182,16 @@ class RpcService(object):
                                 "the same signature")
             rpc_callback = callback
 
-        # Create a controller for this call
-        controller = self.channel.newController()
-
         # Spawn a new thread to wait for the callback so this can return
         # immediately if an asynch callback has been requested
         rpc_thread = RpcThread(rpc, self.service, controller,
                                request, rpc_callback)
         rpc_thread.start()
-        # If a callback has been passed in return
+        # If a callback has been passed in, return controller
         if rpc_callback == callback:
-            return
-        else:
-            if timeout == None:
-                timeout = 100
+            return controller
+
+        # Run with timeout
         end = time() + (timeout / 1000)
 
         # Wait for timeout or thread to exit indicating call has returned
@@ -195,5 +199,8 @@ class RpcService(object):
 
         if time() >= end and not result['done']:
             raise RpcError('request timed out')
+
+        if controller.failed():
+            raise RpcError(controller.error())
 
         return result['response']

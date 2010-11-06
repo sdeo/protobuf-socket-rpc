@@ -36,6 +36,7 @@ import sys
 sys.path.append('../../main')
 
 # Import the class to test
+from protobuf.socketrpc.error import RpcError
 import protobuf.socketrpc.channel as ch
 import protobuf.socketrpc.error as error
 
@@ -236,25 +237,34 @@ class TestSocketRpcChannel(unittest.TestCase):
 
         # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
+        def VerifyGoodRpc(response):
+            self.assertEquals(self.service_response.str_data,
+                              response.str_data, 'Response message')
+            self.assertEquals(self.serialized_request,
+                              socket.getRequest().request_proto,
+                              'Request protocol serialisation')
+            self.assertEquals(service.DESCRIPTOR.full_name,
+                              socket.getRequest().service_name, 'Service name')
+            self.assertEquals(service.DESCRIPTOR.methods[0].name,
+                              socket.getRequest().method_name, 'Method name')
+            
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, self.service_request, callback)
 
         self.assertTrue(callback.invoked, 'Callback invoked')
-        self.assertEquals(self.service_response.str_data,
-                          callback.response.str_data, 'Response message')
-        self.assertEquals(self.serialized_request,
-                          socket.getRequest().request_proto,
-                          'Request protocol serialisation')
-        self.assertEquals(service.DESCRIPTOR.full_name,
-                          socket.getRequest().service_name, 'Service name')
-        self.assertEquals(service.DESCRIPTOR.methods[0].name,
-                          socket.getRequest().method_name, 'Method name')
+        VerifyGoodRpc(callback.response)
+        
+        # Call Blocking RPC
+        controller = channel.newController()
+        response = service.TestMethod(controller, self.service_request, None)
+        VerifyGoodRpc(response)
+        
 
     def testUnknownHostException(self):
         '''Test unknown host.'''
@@ -267,19 +277,31 @@ class TestSocketRpcChannel(unittest.TestCase):
 
         # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, self.service_request, callback)
 
-        self.assertFalse(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.response is None, 'Response')
         self.assertTrue(controller.failed())
         self.assertEquals(rpc_pb2.UNKNOWN_HOST, controller.reason,
                           'Error reason')
+        
+        # Call Blocking RPC
+        controller = channel.newController()
+        try:
+            service.TestMethod(controller, self.service_request, None)
+            self.fail('Should have thrown error')
+        except RpcError:
+            self.assertTrue(controller.failed())
+            self.assertEquals(rpc_pb2.UNKNOWN_HOST, controller.reason, 
+                              'Error reason')
+        
 
     def testIOErrorWhileCreatingSocket(self):
         '''Test Error while creating socket.'''
@@ -290,20 +312,32 @@ class TestSocketRpcChannel(unittest.TestCase):
         socketFactory = FakeSocketFactory()
         socketFactory.setSocket(socket)
 
-         # Create channel
+        # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, self.service_request, callback)
 
-        self.assertFalse(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.response is None, 'Response')
         self.assertTrue(controller.failed())
         self.assertEquals(rpc_pb2.IO_ERROR, controller.reason, 'Error reason')
+
+        # Call Blocking RPC
+        controller = channel.newController()
+        try:
+            service.TestMethod(controller, self.service_request, None)
+            self.fail('Should have thrown error')
+        except RpcError:
+            self.assertTrue(controller.failed())
+            self.assertEquals(rpc_pb2.IO_ERROR, controller.reason, 
+                              'Error reason')
+
 
     def testIncompleteRequest(self):
         '''Test calling RPC with incomplete request.'''
@@ -319,18 +353,30 @@ class TestSocketRpcChannel(unittest.TestCase):
 
         # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, service_request, callback)
 
-        self.assertFalse(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.response is None, 'Response')
         self.assertEquals(rpc_pb2.BAD_REQUEST_PROTO, controller.reason)
         self.assertTrue(controller.failed())
+
+        # Call Blocking RPC
+        controller = channel.newController()
+        try:
+            service.TestMethod(controller, service_request, None)
+            self.fail('Should have thrown error')
+        except RpcError:
+            self.assertTrue(controller.failed())
+            self.assertEquals(rpc_pb2.BAD_REQUEST_PROTO, controller.reason, 
+                              'Error reason')
+
 
     def testNoCallBack(self):
         '''Test RPC failing to invoke callback.'''
@@ -343,12 +389,12 @@ class TestSocketRpcChannel(unittest.TestCase):
 
         # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, self.service_request, callback)
 
@@ -361,6 +407,13 @@ class TestSocketRpcChannel(unittest.TestCase):
         self.assertEquals(service.DESCRIPTOR.methods[0].name,
                           socket.getRequest().method_name, 'Method name')
 
+        # Call Blocking RPC
+        controller = channel.newController()
+        response = service.TestMethod(controller, self.service_request, None)
+        self.assertFalse(controller.failed())
+        self.assertTrue(response is None, 'Response');
+        
+
     def testBadResponse(self):
         '''Test bad response from server.'''
 
@@ -372,23 +425,34 @@ class TestSocketRpcChannel(unittest.TestCase):
 
         # Create channel
         channel = ch.SocketRpcChannel("host", -1, socketFactory)
-        controller = channel.newController()
 
         # Create the service
         service = test_pb2.TestService_Stub(channel)
 
         # Call RPC method
+        controller = channel.newController()
         callback = FakeCallback()
         service.TestMethod(controller, self.service_request, callback)
 
         # Verify request was sent and bad response received
-        self.assertFalse(callback.invoked, 'Callback invoked')
+        self.assertTrue(callback.invoked, 'Callback invoked')
         self.assertEquals(self.serialized_request,
                           socket.getRequest().request_proto,
                           'Request protocol serialisation')
         self.assertTrue(controller.failed(), 'Controller failed')
+        self.assertTrue(callback.response is None, 'Response')
         self.assertEquals(rpc_pb2.BAD_RESPONSE_PROTO, controller.reason,
                           'Controller reason')
+
+        # Call Blocking RPC
+        controller = channel.newController()
+        try:
+            service.TestMethod(controller, self.service_request, None)
+            self.fail('Should have thrown error')
+        except RpcError:
+            self.assertTrue(controller.failed())
+            self.assertEquals(rpc_pb2.BAD_RESPONSE_PROTO, controller.reason, 
+                              'Error reason')
 
 
 class Test__LifeCycle(unittest.TestCase):

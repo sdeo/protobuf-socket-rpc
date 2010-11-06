@@ -38,6 +38,7 @@ import socket
 
 # Third party imports
 import google.protobuf.service as service
+from protobuf.socketrpc.error import RpcError
 
 # Module imports
 import rpc_pb2 as rpc_pb
@@ -188,7 +189,7 @@ class SocketRpcChannel(service.RpcChannel):
         lifecycle.tryToReceiveReply()
         lifecycle.tryToParseReply()
         lifecycle.tryToRetrieveServiceResponse(response_class)
-        lifecycle.tryToRunCallback(done)
+        return lifecycle.tryToRunCallback(done)
 
 
 class _LifeCycle():
@@ -211,7 +212,7 @@ class _LifeCycle():
             self.channel.validateRequest(request)
         except error.BadRequestProtoError, e:
             self.controller.handleError(rpc_pb.BAD_REQUEST_PROTO,
-                                   e.message)
+                                        e.message)
 
     def tryToOpenSocket(self):
         if self.controller.failed():
@@ -219,10 +220,10 @@ class _LifeCycle():
 
         # Open socket
         try:
-            self.sock = self.channel.openSocket(self.channel.host,\
+            self.sock = self.channel.openSocket(self.channel.host,
                                                 self.channel.port)
         except error.UnknownHostError, e:
-            self.controller.handleError(rpc_pb.UNKNOWN_HOST,\
+            self.controller.handleError(rpc_pb.UNKNOWN_HOST,
                                         e.message)
         except error.IOError, e:
             self.controller.handleError(rpc_pb.IO_ERROR, e.message)
@@ -257,7 +258,7 @@ class _LifeCycle():
         #Parse RPC reply
         try:
             self.rpcResponse = self.channel.parseResponse(self.byte_stream,
-                                                   rpc_pb.Response)
+                                                          rpc_pb.Response)
         except error.BadResponseProtoError, e:
             self.controller.handleError(rpc_pb.BAD_RESPONSE_PROTO, e.message)
 
@@ -268,8 +269,9 @@ class _LifeCycle():
         if self.rpcResponse.HasField('error'):
             self.controller.handleError(self.rpcResponse.error_reason,
                                         self.rpcResponse.error)
-        else:
-
+            return
+        
+        if self.rpcResponse.HasField('response_proto'):
             # Extract service response
             try:
                 self.serviceResponse = self.channel.parseResponse(
@@ -279,14 +281,18 @@ class _LifeCycle():
                                             e.message)
 
     def tryToRunCallback(self, done):
-        if self.controller.failed():
-            return
-
         # Check for any outstanding errors
-        if(self.rpcResponse.error):
+        if not self.controller.failed() and self.rpcResponse.error:
             self.controller.handleError(self.rpcResponse.error_reason,
                                         self.rpcResponse.error)
 
-        # Run the callback, if there is one
-        if done:
+        # If blocking, return response or raise error
+        if done is None:
+            if self.controller.failed():
+                raise RpcError(self.controller.error())
+            else:
+                return self.serviceResponse
+
+        # Run the callback
+        if self.controller.failed() or self.rpcResponse.callback:
             done.run(self.serviceResponse)
