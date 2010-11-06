@@ -29,12 +29,12 @@ import com.google.protobuf.RpcCallback;
  * a server running {@link SocketRpcServer} with the RPC method implementation
  * running on it.
  * <p>
- * If an {@link RpcCallback} is given, the
- * {@code #callMethod(MethodDescriptor, RpcController, Message, Message, RpcCallback)}
- * method will invoke it with the same protobuf that the RPC method
- * implementation on the server side invoked the callback with, or will not
- * invoke it if that was the case on the server side. If some error occurred,
- * the callback will not be invoked but the controller will be updated.
+ * If an {@link RpcCallback} is given, the {@code #callMethod(MethodDescriptor,
+ * RpcController, Message, Message, RpcCallback)} method will invoke it with the
+ * same protobuf that the RPC method implementation on the server side invoked
+ * the callback with, or will not invoke it if that was the case on the server
+ * side. If some error occurred, the callback will be invoked with null and the
+ * controller will be updated.
  *
  * @deprecated Use {@link RpcChannels} to create {@code RpcChannel}s.
  *

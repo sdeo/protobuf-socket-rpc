@@ -70,15 +70,20 @@ class RpcChannelImpl implements RpcChannel, BlockingRpcChannel {
     try {
       connection = createConnection(socketController);
     } catch (ServiceException e) {
-      // Do nothing, controller has the error information
+      // Call done with null, controller has the error information
+      callbackWithNull(done);
       return;
     }
 
     try {
       sendRpcRequest(method, socketController, request, connection);
     } catch (ServiceException e) {
-      // Do nothing, controller has the error information
-      close(connection);
+      // Call done with null, controller has the error information
+      try {
+        callbackWithNull(done);
+      } finally {
+        close(connection);
+      }
       return;
     }
 
@@ -93,19 +98,26 @@ class RpcChannelImpl implements RpcChannel, BlockingRpcChannel {
           Message response = handleRpcResponse(responsePrototype, rpcResponse,
               socketController);
 
-          if ((done == null) || !rpcResponse.getCallback()) {
-            // No callback needed.
-            return;
+          // Callback if failed or server invoked callback
+          if (socketController.failed() || rpcResponse.getCallback()) {
+            if (done != null) {
+              done.run(response);
+            }
           }
-          done.run(response);
         } catch (ServiceException e) {
-          // Do nothing, controller has the error information
-          return;
+          // Call done with null, controller has the error information
+          callbackWithNull(done);
         } finally {
           close(connection);
         }
       }
     });
+  }
+
+  private static void callbackWithNull(RpcCallback<Message> done) {
+    if (done != null) {
+      done.run(null);
+    }
   }
 
   @Override

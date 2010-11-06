@@ -300,7 +300,8 @@ public class SocketRpcChannelTest extends TestCase {
     if (reason != null) {
       assertTrue(controller.failed());
       assertEquals(reason, controller.errorReason());
-      assertFalse(callback.invoked);
+      assertTrue(callback.invoked);
+      assertNull(callback.response);
     } else {
       assertFalse(controller.failed());
     }
