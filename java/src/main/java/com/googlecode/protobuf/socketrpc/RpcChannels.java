@@ -59,6 +59,10 @@ public final class RpcChannels {
    * RPCs made using this {@link RpcChannel} will not block the thread calling
    * the RPC method. Use {@link #newBlockingRpcChannel(RpcConnectionFactory)} if
    * you want the RPC method to block.
+   * <p>
+   * This channel doesn't call the callback if the server-side implementation
+   * did not call the callback. If any error occurs, it will call the callback
+   * with null and update the controller with the error.
    */
   public static RpcChannel newRpcChannel(
       RpcConnectionFactory connectionFactory, Executor executor) {

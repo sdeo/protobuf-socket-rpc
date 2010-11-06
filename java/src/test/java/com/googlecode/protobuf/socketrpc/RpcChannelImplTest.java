@@ -184,18 +184,16 @@ public class RpcChannelImplTest extends TestCase {
     socket.withInputBytes("bad response".getBytes());
 
     // Call non-blocking method
-    FakeCallback callback = callRpc(request, ErrorReason.IO_ERROR);
+    callRpc(request, ErrorReason.IO_ERROR);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
 
     // Call blocking method
     assertNull(callBlockingRpc(request, ErrorReason.IO_ERROR));
     verifyRequestToSocket(request);
 
     // Call method asynchronously
-    callback = callAsyncRpc(request, ErrorReason.IO_ERROR);
+    callAsyncRpc(request, ErrorReason.IO_ERROR);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
   }
 
   /**
@@ -207,19 +205,15 @@ public class RpcChannelImplTest extends TestCase {
     Request request = Request.newBuilder().setStrData(reqdata).build();
     socket.withResponseProto(ByteString.copyFrom("bad response".getBytes()));
 
-    // Call non-blocking method
-    FakeCallback callback = callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
 
     // Call blocking method
     assertNull(callBlockingRpc(request, ErrorReason.BAD_RESPONSE_PROTO));
     verifyRequestToSocket(request);
 
-    // Call method asynchronously
-    callback = callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
   }
 
   /**
@@ -233,19 +227,15 @@ public class RpcChannelImplTest extends TestCase {
     Response response = Response.newBuilder().setIntData(5).buildPartial();
     socket.withResponseProto(response);
 
-    // Call non-blocking method
-    FakeCallback callback = callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    callRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
 
     // Call blocking method
     assertNull(callBlockingRpc(request, ErrorReason.BAD_RESPONSE_PROTO));
     verifyRequestToSocket(request);
 
-    // Call method asynchronously
-    callback = callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
+    callAsyncRpc(request, ErrorReason.BAD_RESPONSE_PROTO);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
   }
 
   /**
@@ -267,19 +257,15 @@ public class RpcChannelImplTest extends TestCase {
     String error = "Error String";
     socket.withErrorResponseProto(error, reason);
 
-    // Call non-blocking method
-    FakeCallback callback = callRpc(request, reason);
+    callRpc(request, reason);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
 
     // Call blocking method
     assertNull(callBlockingRpc(request, reason));
     verifyRequestToSocket(request);
 
-    // Call method asynchronously
-    callback = callAsyncRpc(request, reason);
+    callAsyncRpc(request, reason);
     verifyRequestToSocket(request);
-    assertFalse(callback.invoked);
   }
 
   private FakeCallback callRpc(Request request, ErrorReason reason) {
@@ -290,7 +276,8 @@ public class RpcChannelImplTest extends TestCase {
     if (reason != null) {
       assertTrue(controller.failed());
       assertEquals(reason, controller.errorReason());
-      assertFalse(callback.invoked);
+      assertTrue(callback.invoked);
+      assertNull(callback.response);
     } else {
       assertFalse(controller.failed());
     }
@@ -323,16 +310,18 @@ public class RpcChannelImplTest extends TestCase {
     FakeCallback callback = new FakeCallback();
     service.testMethod(controller, request, callback);
 
-    // Callback should not be called yet since it is async
-    assertFalse(callback.invoked);
     assertEquals(hasListener, executor.listener != null);
     if (hasListener) {
+      // Callback should not be called yet since it is async
+      assertFalse(callback.invoked);
       executor.listener.run();
     }
 
     if (reason != null) {
       assertTrue(controller.failed());
       assertEquals(reason, controller.errorReason());
+      assertTrue(callback.invoked);
+      assertNull(callback.response);
     } else {
       assertFalse(controller.failed());
     }
