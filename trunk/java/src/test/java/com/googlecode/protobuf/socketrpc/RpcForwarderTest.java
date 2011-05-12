@@ -64,8 +64,8 @@ public class RpcForwarderTest extends TestCase {
         .build();
 
     // Register Service
-    rpcForwarder.registerService(new FakeServiceImpl(REQUEST)
-        .withResponse(response));
+    rpcForwarder.registerService(TestService.newReflectiveService(new FakeServiceImpl(REQUEST)
+        .withResponse(response)));
 
     // Test doBlockingRpc
     SocketRpcProtos.Response rpcResponse =

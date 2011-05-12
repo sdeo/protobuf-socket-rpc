@@ -142,6 +142,7 @@ public class PersistentRpcConnectionFactoryTest extends TestCase {
     final AtomicInteger count = new AtomicInteger();
     final AtomicBoolean runServer = new AtomicBoolean(true);
     new Thread(new Runnable() {
+      @Override
       public void run() {
         try {
           while (runServer.get()) {
@@ -180,6 +181,7 @@ public class PersistentRpcConnectionFactoryTest extends TestCase {
 
   private void receiveRequest(final Connection connection) {
     new Thread(new Runnable() {
+      @Override
       public void run() {
         Builder builder = Request.newBuilder();
         try {

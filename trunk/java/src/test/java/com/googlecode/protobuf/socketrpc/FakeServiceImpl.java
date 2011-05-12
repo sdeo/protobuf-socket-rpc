@@ -36,7 +36,7 @@ import com.googlecode.protobuf.socketrpc.TestProtos.TestService;
  * @author Shardul Deo
  */
 public class FakeServiceImpl extends TestService implements
-    TestService.BlockingInterface {
+    TestService.BlockingInterface, TestService.Interface {
 
   private final Request expectedRequest;;
   private String error = null;

@@ -26,68 +26,97 @@ from google.protobuf import reflection
 from google.protobuf import service
 from google.protobuf import service_reflection
 from google.protobuf import descriptor_pb2
+# @@protoc_insertion_point(imports)
+
+
+
+DESCRIPTOR = descriptor.FileDescriptor(
+  name='hello_world.proto',
+  package='protobuf.socketrpc',
+  serialized_pb='\n\x11hello_world.proto\x12\x12protobuf.socketrpc\"\x1f\n\x0cHelloRequest\x12\x0f\n\x07my_name\x18\x02 \x02(\t\"$\n\rHelloResponse\x12\x13\n\x0bhello_world\x18\x01 \x02(\t2f\n\x11HelloWorldService\x12Q\n\nHelloWorld\x12 .protobuf.socketrpc.HelloRequest\x1a!.protobuf.socketrpc.HelloResponseB4\n,com.googlecode.protobuf.socketrpc.helloworld\x88\x01\x01\x90\x01\x01')
+
 
 
 
 _HELLOREQUEST = descriptor.Descriptor(
   name='HelloRequest',
   full_name='protobuf.socketrpc.HelloRequest',
-  filename='hello_world.proto',
+  filename=None,
+  file=DESCRIPTOR,
   containing_type=None,
   fields=[
     descriptor.FieldDescriptor(
       name='my_name', full_name='protobuf.socketrpc.HelloRequest.my_name', index=0,
       number=2, type=9, cpp_type=9, label=2,
-      default_value=unicode("", "utf-8"),
+      has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
   ],
   extensions=[
   ],
-  nested_types=[],  # TODO(robinson): Implement.
+  nested_types=[],
   enum_types=[
   ],
-  options=None)
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  serialized_start=41,
+  serialized_end=72,
+)
 
 
 _HELLORESPONSE = descriptor.Descriptor(
   name='HelloResponse',
   full_name='protobuf.socketrpc.HelloResponse',
-  filename='hello_world.proto',
+  filename=None,
+  file=DESCRIPTOR,
   containing_type=None,
   fields=[
     descriptor.FieldDescriptor(
       name='hello_world', full_name='protobuf.socketrpc.HelloResponse.hello_world', index=0,
       number=1, type=9, cpp_type=9, label=2,
-      default_value=unicode("", "utf-8"),
+      has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
   ],
   extensions=[
   ],
-  nested_types=[],  # TODO(robinson): Implement.
+  nested_types=[],
   enum_types=[
   ],
-  options=None)
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  serialized_start=74,
+  serialized_end=110,
+)
 
-
+DESCRIPTOR.message_types_by_name['HelloRequest'] = _HELLOREQUEST
+DESCRIPTOR.message_types_by_name['HelloResponse'] = _HELLORESPONSE
 
 class HelloRequest(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _HELLOREQUEST
+  
+  # @@protoc_insertion_point(class_scope:protobuf.socketrpc.HelloRequest)
 
 class HelloResponse(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _HELLORESPONSE
+  
+  # @@protoc_insertion_point(class_scope:protobuf.socketrpc.HelloResponse)
 
 
 _HELLOWORLDSERVICE = descriptor.ServiceDescriptor(
   name='HelloWorldService',
   full_name='protobuf.socketrpc.HelloWorldService',
+  file=DESCRIPTOR,
   index=0,
   options=None,
+  serialized_start=112,
+  serialized_end=214,
   methods=[
   descriptor.MethodDescriptor(
     name='HelloWorld',
@@ -107,3 +136,4 @@ class HelloWorldService_Stub(HelloWorldService):
   __metaclass__ = service_reflection.GeneratedServiceStubType
   DESCRIPTOR = _HELLOWORLDSERVICE
 
+# @@protoc_insertion_point(module_scope)

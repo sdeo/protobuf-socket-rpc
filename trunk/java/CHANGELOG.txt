@@ -1,5 +1,6 @@
 Version 1.x (SVN Trunk) YYYY-MM-DD
 
+* Protobuf 2.4.0 compatible
 * Add persistent connection support
 * Protobuf 2.3.0 compatible
 * Reorganized tree to match Maven conventions

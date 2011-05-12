@@ -117,6 +117,7 @@ public class PersistentRpcConnectionFactory implements
    * @see Connection#close()
    * @see ServerRpcConnectionFactory#close()
    */
+  @Override
   public void close() throws IOException {
     PersistentConnection local = connection;
     if (local != null) {

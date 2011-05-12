@@ -9,10 +9,11 @@ from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 
+
 DESCRIPTOR = descriptor.FileDescriptor(
   name='test.proto',
   package='protobuf.socketrpc',
-  serialized_pb='\n\ntest.proto\x12\x12protobuf.socketrpc\"\x1b\n\x07Request\x12\x10\n\x08str_data\x18\x01 \x02(\t\".\n\x08Response\x12\x10\n\x08str_data\x18\x01 \x02(\t\x12\x10\n\x08int_data\x18\x02 \x01(\x05\x32V\n\x0bTestService\x12G\n\nTestMethod\x12\x1b.protobuf.socketrpc.Request\x1a\x1c.protobuf.socketrpc.Response')
+  serialized_pb='\n\ntest.proto\x12\x12protobuf.socketrpc\"\x1b\n\x07Request\x12\x10\n\x08str_data\x18\x01 \x02(\t\".\n\x08Response\x12\x10\n\x08str_data\x18\x01 \x02(\t\x12\x10\n\x08int_data\x18\x02 \x01(\x05\x32V\n\x0bTestService\x12G\n\nTestMethod\x12\x1b.protobuf.socketrpc.Request\x1a\x1c.protobuf.socketrpc.ResponseB\x03\x90\x01\x01')
 
 
 
@@ -79,7 +80,8 @@ _RESPONSE = descriptor.Descriptor(
   serialized_end=109,
 )
 
-
+DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
+DESCRIPTOR.message_types_by_name['Response'] = _RESPONSE
 
 class Request(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType

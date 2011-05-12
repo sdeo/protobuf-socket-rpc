@@ -46,6 +46,7 @@ public class SocketRpcChannelTest extends TestCase {
     private Response response;
     private boolean invoked = false;
 
+    @Override
     public void run(Response response) {
       this.response = response;
       invoked = true;

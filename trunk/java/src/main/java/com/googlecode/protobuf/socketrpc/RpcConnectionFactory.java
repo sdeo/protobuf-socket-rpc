@@ -68,6 +68,7 @@ public interface RpcConnectionFactory {
      * Close the connection and do any cleanup if needed. The connection cannot
      * be used after this method has been called.
      */
+    @Override
     void close() throws IOException;
 
     /**
