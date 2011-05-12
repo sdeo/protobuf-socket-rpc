@@ -24,6 +24,8 @@
 
 package protobuf.socketrpc;
 
+option py_generic_services = true;
+
 message Request {
   required string str_data = 1;
 }

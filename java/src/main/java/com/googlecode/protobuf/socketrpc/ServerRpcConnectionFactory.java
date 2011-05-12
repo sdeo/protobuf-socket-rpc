@@ -37,5 +37,6 @@ public interface ServerRpcConnectionFactory extends RpcConnectionFactory,
    * Stop accepting any more requests, should be called when shutting down the
    * server.
    */
+  @Override
   public void close() throws IOException;
 }

@@ -24,6 +24,10 @@
 
 package protobuf.socketrpc;
 
+option java_package = "com.googlecode.protobuf.socketrpc.helloworld";
+option java_generic_services = true;
+option py_generic_services = true;
+
 message HelloRequest
 {
    required string my_name = 2;

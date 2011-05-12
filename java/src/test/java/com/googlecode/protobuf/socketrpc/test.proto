@@ -26,6 +26,7 @@ package protobuf.socketrpc;
 
 option java_package = "com.googlecode.protobuf.socketrpc";
 option java_outer_classname = "TestProtos";
+option java_generic_services = true;
 
 message Request {
   required string str_data = 1;

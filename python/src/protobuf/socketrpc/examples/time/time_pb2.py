@@ -26,61 +26,90 @@ from google.protobuf import reflection
 from google.protobuf import service
 from google.protobuf import service_reflection
 from google.protobuf import descriptor_pb2
+# @@protoc_insertion_point(imports)
+
+
+
+DESCRIPTOR = descriptor.FileDescriptor(
+  name='time.proto',
+  package='protobuf.socketrpc',
+  serialized_pb='\n\ntime.proto\x12\x12protobuf.socketrpc\"\r\n\x0bTimeRequest\" \n\x0cTimeResponse\x12\x10\n\x08str_time\x18\x01 \x02(\t2[\n\x0bTimeService\x12L\n\x07getTime\x12\x1f.protobuf.socketrpc.TimeRequest\x1a .protobuf.socketrpc.TimeResponseB\x03\x90\x01\x01')
+
 
 
 
 _TIMEREQUEST = descriptor.Descriptor(
   name='TimeRequest',
   full_name='protobuf.socketrpc.TimeRequest',
-  filename='time.proto',
+  filename=None,
+  file=DESCRIPTOR,
   containing_type=None,
   fields=[
   ],
   extensions=[
   ],
-  nested_types=[],  # TODO(robinson): Implement.
+  nested_types=[],
   enum_types=[
   ],
-  options=None)
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  serialized_start=34,
+  serialized_end=47,
+)
 
 
 _TIMERESPONSE = descriptor.Descriptor(
   name='TimeResponse',
   full_name='protobuf.socketrpc.TimeResponse',
-  filename='time.proto',
+  filename=None,
+  file=DESCRIPTOR,
   containing_type=None,
   fields=[
     descriptor.FieldDescriptor(
       name='str_time', full_name='protobuf.socketrpc.TimeResponse.str_time', index=0,
       number=1, type=9, cpp_type=9, label=2,
-      default_value=unicode("", "utf-8"),
+      has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
   ],
   extensions=[
   ],
-  nested_types=[],  # TODO(robinson): Implement.
+  nested_types=[],
   enum_types=[
   ],
-  options=None)
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  serialized_start=49,
+  serialized_end=81,
+)
 
-
+DESCRIPTOR.message_types_by_name['TimeRequest'] = _TIMEREQUEST
+DESCRIPTOR.message_types_by_name['TimeResponse'] = _TIMERESPONSE
 
 class TimeRequest(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _TIMEREQUEST
+  
+  # @@protoc_insertion_point(class_scope:protobuf.socketrpc.TimeRequest)
 
 class TimeResponse(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
   DESCRIPTOR = _TIMERESPONSE
+  
+  # @@protoc_insertion_point(class_scope:protobuf.socketrpc.TimeResponse)
 
 
 _TIMESERVICE = descriptor.ServiceDescriptor(
   name='TimeService',
   full_name='protobuf.socketrpc.TimeService',
+  file=DESCRIPTOR,
   index=0,
   options=None,
+  serialized_start=83,
+  serialized_end=174,
   methods=[
   descriptor.MethodDescriptor(
     name='getTime',
@@ -100,3 +129,4 @@ class TimeService_Stub(TimeService):
   __metaclass__ = service_reflection.GeneratedServiceStubType
   DESCRIPTOR = _TIMESERVICE
 
+# @@protoc_insertion_point(module_scope)

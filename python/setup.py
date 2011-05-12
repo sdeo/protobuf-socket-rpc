@@ -49,6 +49,6 @@ setup(
     package_dir={'': 'src'},
     # protobuf is not easy_install'able (yet) see
     # http://code.google.com/p/protobuf/issues/detail?id=66
-    #install_requires=['protobuf>=2.3'],
+    #install_requires=['protobuf>=2.4'],
     test_suite='protobuf.socketrpc.tests',
 )

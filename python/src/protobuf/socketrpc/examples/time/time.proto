@@ -19,6 +19,8 @@
 // THE SOFTWARE.
 package protobuf.socketrpc;
 
+option py_generic_services = true;
+
 message TimeRequest
 {
 }
