@@ -44,7 +44,7 @@ class ProtobufError(Exception):
         message - Message string detailing error.
         rpc_error_code - Error code from rpc.proto file.
         '''
-        self.message = message
+        Exception.__init__(self, message)
         self.rpc_error_code = rpc_error_code
 
 
