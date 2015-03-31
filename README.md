@@ -16,15 +16,15 @@ See:
 
 ### Java
 
-The libraries in the [http://code.google.com/p/protobuf-socket-rpc/downloads/list download section] are compiled with Java 1.6, alternatively, you can download the source and use it directly.
+You can find a jar compiled with with Java 1.6 at downloads/protobuf-socket-rpc-2.0.jar, alternatively, you can download the source and use it directly.
 
 You will also need the google protobuf library (version 2.4.0) in your classpath. You can get it from http://code.google.com/p/protobuf/downloads/list
 
 ### Python
 
-Python egg in [http://code.google.com/p/protobuf-socket-rpc/downloads/list download section].
+Python egg is at downloads/protobuf.socketrpc-1.3.2-py2.6.egg
 
-Or checkout source from svn: http://code.google.com/p/protobuf-socket-rpc/source/browse/#svn/trunk/python
+Or checkout source from the python directory.
 
 ## Release
 
