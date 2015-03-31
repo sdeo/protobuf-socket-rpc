@@ -1,4 +1,6 @@
-# A simple usage example for Java
+# Protobuf Socket RPC
+
+Imported from http://protobuf-socket-rpc.googlecode.com/svn/trunk/
 
 ## Java Usage 
 
