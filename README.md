@@ -2,6 +2,40 @@
 
 Imported from http://protobuf-socket-rpc.googlecode.com/svn/trunk/
 
+## Description
+
+Google's protocol buffer library makes writing rpc services easy, but it does not contain a rpc implementation. The transport details are left up to the user to implement.
+
+This is a simple tcp/ip socket based rpc implementation in java and python for people who want a simple implementation of their protobuf rpc services.
+
+See:
+* http://code.google.com/p/protobuf/
+* http://code.google.com/apis/protocolbuffers/docs/overview.html
+
+## Download/Installation
+
+### Java
+
+The libraries in the [http://code.google.com/p/protobuf-socket-rpc/downloads/list download section] are compiled with Java 1.6, alternatively, you can download the source and use it directly.
+
+You will also need the google protobuf library (version 2.4.0) in your classpath. You can get it from http://code.google.com/p/protobuf/downloads/list
+
+### Python
+
+Python egg in [http://code.google.com/p/protobuf-socket-rpc/downloads/list download section].
+
+Or checkout source from svn: http://code.google.com/p/protobuf-socket-rpc/source/browse/#svn/trunk/python
+
+## Release
+
+Please join the [discussion group](http://groups.google.com/group/protobuf-socket-rpc) to be notified of new releases.
+
+## Mailing List 
+
+Have questions or want to contribute to this project?
+
+Please post a message on the discussion group, http://groups.google.com/group/protobuf-socket-rpc
+
 ## Java Usage 
 
 The following example shows a server and a client using the `com.googlecode.protobuf.socketrpc` Java API.
