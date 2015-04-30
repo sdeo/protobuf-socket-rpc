@@ -41,6 +41,7 @@ May 2009, Nov 2010
 # Standard library imports
 import SocketServer
 import logging
+import functools
 
 # Third-party imports
 
@@ -75,7 +76,8 @@ class Callback():
 class SocketHandler(SocketServer.StreamRequestHandler):
     '''Handler for service requests.'''
 
-    def __init__(self, request, client_address, server, socket_rpc_server):
+    def __init__(self, request, client_address, server, socket_rpc_server, timeout=None):
+        self.timeout = timeout
         self.socket_rpc_server = socket_rpc_server
         SocketServer.StreamRequestHandler.__init__(
             self, request, client_address, server)
@@ -243,10 +245,13 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 class SocketRpcServer:
     '''Socket server for running rpc services.'''
 
-    def __init__(self, port, host='localhost'):
-        '''port - Port this server is started on'''
+    def __init__(self, port, host='localhost', timeout=None):
+        '''port - Port this server is started on
+           host - The host to bind to.
+           timeout - Socket handler timeout (s)'''
         self.port = port
         self.host = host
+        self.timeout = timeout
         self.serviceMap = {}
 
     def registerService(self, service):
@@ -256,5 +261,8 @@ class SocketRpcServer:
     def run(self):
         '''Activate the server.'''
         log.info('Running server on port %d' % self.port)
-        server = ThreadedTCPServer((self.host, self.port), SocketHandler, self)
+
+        server = ThreadedTCPServer((self.host, self.port),
+                                   functools.partial(SocketHandler, timeout=self.timeout),
+                                   self)
         server.serve_forever()
